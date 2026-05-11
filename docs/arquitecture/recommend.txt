@@ -1,0 +1,55 @@
+Módulos iniciales del Core
+01_identity_auth
+02_roles_permissions
+03_menu_builder
+04_tenancy
+05_audit_log
+06_notifications
+07_uploads
+08_dashboard_widgets
+09_worker_jobs
+10_ai_hooks
+11_prompt_infra
+12_agent_orchestration
+13_templates
+14_operational_settings
+
+
+Primeros documentos que deberíamos crear
+
+VISION.md -> LISTO
+TECH_STACK_DECISION.md -> LISTO
+DOMAIN_BOUNDARIES.md-> LISTO
+MODULE_MAP.md-> LISTO
+TENANCY_STRATEGY.md -> LISTO
+AUTHORIZATION_MODEL.md -> LISTO
+AUDIT_MODEL.md-> LISTO
+EVENT_MODEL.md-> LISTO
+AI_NATIVE_STRATEGY.md -> LISTO
+PROMPT_INFRASTRUCTURE.md -> LISTO
+AGENT_ORCHESTRATION.md-> LISTO
+TESTING_STRATEGY.md-> LISTO
+ARCHITECTURE_DECISIONS.md
+
+
+Core Platform
+│
+├── Identity
+├── Authorization
+├── Tenancy
+├── Audit
+├── Notifications
+├── Uploads
+├── Workflows
+├── AI
+│   ├── Prompts
+│   ├── Agents
+│   ├── Templates
+│   ├── AI Hooks
+│   └── Orchestrators
+├── Shared Kernel
+└── Domain Apps
+    ├── Parcelas
+    ├── Marketplace
+    ├── MYL Tracker
+    └── etc
