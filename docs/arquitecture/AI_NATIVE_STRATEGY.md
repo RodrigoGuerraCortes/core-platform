@@ -451,3 +451,41 @@ while minimizing:
 - uncontrolled automation
 - inconsistent implementations
 - operational risk
+
+---
+
+## 22. Initial Implementation Scope
+
+Phase 1 should prioritize:
+
+- simple AI services (single provider, single model)
+- prompt files/configs stored in the filesystem or a simple DB table
+- queued AI execution via Laravel Queues + Redis
+- audit logging of AI calls (prompt, model, tokens, result)
+- human approval for any AI action that modifies data
+- basic orchestration (a single service class that calls the AI provider)
+
+The following are **NOT** initial scope:
+
+- autonomous agents
+- complex orchestration (multi‑step pipelines, branching)
+- multi‑agent systems
+- distributed AI runtimes
+- advanced memory systems (vector stores, long‑term context)
+- provider failover systems
+- prompt versioning with A/B testing
+- real‑time streaming inference
+
+---
+
+## 23. Future Evolution
+
+Advanced concepts remain part of the long‑term vision and should be revisited only after product validation:
+
+- distributed orchestration (separate worker runtimes)
+- orchestration graphs (visual workflow builders)
+- adaptive AI systems (self‑tuning prompts, model selection)
+- autonomous workflows (agents that plan and execute without human approval)
+- advanced prompt optimization (dynamic context injection, prompt analytics)
+- multi‑model orchestration with automatic fallback
+- real‑time streaming and WebSocket‑based AI responses

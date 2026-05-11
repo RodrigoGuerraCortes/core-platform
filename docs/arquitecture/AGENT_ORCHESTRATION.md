@@ -533,3 +533,44 @@ while minimizing:
 - infinite loops
 - provider lock-in
 - operational instability
+
+---
+
+## 26. Initial Orchestration Scope
+
+Phase 1 should support only:
+
+- **simple AI services** – a single service class that calls an AI provider and returns a result
+- **queued execution** – all AI work runs via Laravel Queues (Redis)
+- **retries** – standard queue retry with exponential backoff and a maximum retry limit (e.g., 3 attempts)
+- **audit logging** – every AI execution is logged with prompt, model, tokens, result, and actor
+- **basic orchestration** – a single workflow step (e.g., “call AI → log → notify”) implemented in a job class
+- **human approval workflows** – any AI action that modifies data requires a human to approve before execution
+
+Agents initially behave more like **workflow services** than autonomous AI entities. They are invoked by a job or a controller, execute a deterministic sequence of steps, and stop.
+
+---
+
+## 27. NOT Initial Scope
+
+The following are explicitly **future roadmap** and must not be implemented in Phase 1:
+
+- autonomous agents (agents that plan, execute, and adapt without human oversight)
+- self‑planning systems (agents that break down a goal into sub‑tasks)
+- distributed orchestration (separate worker runtimes, gRPC, message brokers)
+- advanced memory systems (vector stores, long‑term conversation history)
+- orchestration graphs (visual workflow builders, DAGs)
+- complex agent chaining (Agent A triggers Agent B which triggers Agent C)
+- swarm systems (multiple agents collaborating)
+- autonomous retries (agents that decide to retry with different parameters)
+- autonomous architecture changes (agents that modify code or infrastructure)
+
+---
+
+## 28. Operational Simplicity First
+
+```txt
+Operational simplicity is prioritized over theoretical AI sophistication.
+```
+
+All orchestration decisions should be evaluated against the question: “Does this make the system easier to operate with a two‑person team?” If the answer is no, the feature should be deferred.

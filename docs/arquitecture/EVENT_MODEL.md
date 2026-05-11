@@ -120,3 +120,27 @@ Events should integrate with:
 - metrics
 - tracing
 - audits
+
+---
+
+# Events for Async Boundaries
+
+Events should primarily be used for:
+
+- notifications (email, push, in‑app)
+- AI execution (triggering a queued AI job)
+- uploads (processing a file after it is stored)
+- integrations (webhooks, third‑party sync)
+- async workflows (long‑running processes that should not block the request)
+
+**Direct synchronous calls inside the monolith are acceptable and encouraged when simpler.** Not every module interaction needs an event. Use events only when you need:
+
+- decoupling (the caller does not need to wait for the result)
+- retry capability (the operation may fail and should be retried)
+- parallel execution (multiple independent handlers)
+
+The platform should avoid:
+
+- event explosion (creating an event for every minor state change)
+- unnecessary async complexity (using events for operations that are fast and synchronous)
+- orchestration sprawl (chaining events in a way that makes the flow hard to trace)

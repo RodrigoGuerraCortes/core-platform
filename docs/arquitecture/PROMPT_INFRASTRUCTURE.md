@@ -411,3 +411,32 @@ while minimizing:
 - undocumented workflows
 - inconsistent AI behavior
 - operational chaos
+
+---
+
+## 23. Initial Prompt Strategy
+
+Phase 1 should use:
+
+- **filesystem‑based prompts** – store prompt templates as plain text files (e.g., `resources/prompts/`) or in a simple DB table
+- **lightweight metadata** – a single JSON column or YAML front matter for name, version, category
+- **simple versioning** – manual file naming (`prompt_v1.txt`, `prompt_v2.txt`) or a `version` column
+- **minimal prompt registry** – a single Eloquent model with fields: `name`, `content`, `version`, `category`, `active`
+- **manual review workflows** – prompts are reviewed by a human before being marked as active; no automated A/B testing
+
+Prompts are still considered infrastructure, but the implementation should remain lightweight initially.
+
+---
+
+## 24. NOT Initial Scope
+
+The following are explicitly **future roadmap** and should not be built in Phase 1:
+
+- prompt marketplace (sharing prompts across tenants)
+- adaptive prompts (prompts that modify themselves based on runtime feedback)
+- prompt analytics (usage dashboards, token cost tracking per prompt)
+- A/B prompt testing (automated split‑testing of prompt variants)
+- dynamic optimization engines (machine‑learning‑driven prompt tuning)
+- advanced orchestration‑aware prompts (prompts that embed workflow state)
+- prompt versioning with rollback and audit trails
+- centralized prompt registry with API endpoints
