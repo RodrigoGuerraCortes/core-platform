@@ -1,0 +1,87 @@
+# ------------------------------------------------------------------
+# Core Platform — Docker Compose
+#
+# Local development runtime.
+# Architecture is frozen; this file is an implementation detail.
+# ------------------------------------------------------------------
+
+services:
+
+  # ------------------------------------------------------------------
+  # app — Laravel PHP‑FPM runtime
+  # ------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: infra/docker/backend/Dockerfile
+    container_name: core-platform-app
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - core-network
+    restart: unless-stopped
+    # php‑fpm listens on port 9000 inside the container; no host port needed.
+
+  # ------------------------------------------------------------------
+  # nginx — HTTP entrypoint for Laravel
+  # ------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: core-platform-nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./infra/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - core-network
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # postgres — Primary relational database
+  # ------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: core-platform-postgres
+    environment:
+      POSTGRES_DB: core_platform
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - core-network
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # redis — Queue, cache, and transient infrastructure
+  # ------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: core-platform-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - core-network
+    restart: unless-stopped
+
+# ------------------------------------------------------------------
+# Networks
+# ------------------------------------------------------------------
+networks:
+  core-network:
+    driver: bridge
+
+# ------------------------------------------------------------------
+# Volumes
+# ------------------------------------------------------------------
+volumes:
+  postgres_data:
