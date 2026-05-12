@@ -115,12 +115,13 @@ Official error structure example:
 
 ---
 
-## 8. UUID Standard
+## 8. ULID Standard
 
-UUIDs are the official public identifier strategy.
+ULID is the official public/business identifier strategy.
 
-- Public APIs should expose UUIDs.
-- Internal numeric IDs should remain hidden.
+- Public APIs should expose ULIDs.
+- Sortable identifiers improve indexing behavior.
+- Internal numeric IDs may exist internally but must never be exposed publicly.
 - Identifiers should remain opaque externally.
 
 ---

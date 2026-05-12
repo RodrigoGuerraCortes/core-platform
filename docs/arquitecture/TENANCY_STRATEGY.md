@@ -74,6 +74,98 @@ Cross-tenant access is forbidden by default.
 
 ---
 
+## Tenant Isolation Enforcement
+
+Core Platform enforces tenant isolation through multiple layers:
+
+### A. Global Tenant Scopes
+
+- Tenant‑owned entities should use global Eloquent tenant scopes by default.
+- Cross‑tenant queries require explicit bypass mechanisms.
+- Bypasses should remain highly restricted and auditable.
+
+Valid bypass scenarios include:
+
+- platform admin workflows
+- operational tooling
+- maintenance workflows
+
+### B. Tenant Middleware
+
+- Tenant resolution middleware is mandatory.
+- Requests must resolve tenant context before business execution.
+- Unresolved tenant context should fail fast.
+
+### C. Tenant Architecture Tests
+
+- Automated tests must validate tenant isolation.
+- Cross‑tenant leakage tests are mandatory.
+- Critical modules require tenant isolation test coverage.
+
+Examples:
+
+- tenant A cannot access tenant B data
+- filters cannot bypass tenant scope
+- includes cannot bypass tenant scope
+
+### D. Static Analysis Rules
+
+- Static analysis should help detect unscoped tenant queries.
+- Dangerous bypass patterns should be minimized.
+- Explicit tenant bypasses should remain reviewable.
+
+### E. Documentation Clarifications
+
+- Tenant isolation is a platform‑level invariant, not an implementation detail.
+
+---
+
+## Tenant Isolation Enforcement
+
+Core Platform enforces tenant isolation through multiple layers:
+
+### A. Global Tenant Scopes
+
+- Tenant‑owned entities should use global Eloquent tenant scopes by default.
+- Cross‑tenant queries require explicit bypass mechanisms.
+- Bypasses should remain highly restricted and auditable.
+
+Valid bypass scenarios include:
+
+- platform admin workflows
+- operational tooling
+- maintenance workflows
+
+### B. Tenant Middleware
+
+- Tenant resolution middleware is mandatory.
+- Requests must resolve tenant context before business execution.
+- Unresolved tenant context should fail fast.
+
+### C. Tenant Architecture Tests
+
+- Automated tests must validate tenant isolation.
+- Cross‑tenant leakage tests are mandatory.
+- Critical modules require tenant isolation test coverage.
+
+Examples:
+
+- tenant A cannot access tenant B data
+- filters cannot bypass tenant scope
+- includes cannot bypass tenant scope
+
+### D. Static Analysis Rules
+
+- Static analysis should help detect unscoped tenant queries.
+- Dangerous bypass patterns should be minimized.
+- Explicit tenant bypasses should remain reviewable.
+
+### E. Documentation Clarifications
+
+- Tenant isolation is a platform‑level invariant, not an implementation detail.
+
+---
+
 # Tenant Resolution
 
 Tenant resolution may occur through:

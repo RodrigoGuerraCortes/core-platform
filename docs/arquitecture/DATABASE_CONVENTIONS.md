@@ -42,11 +42,12 @@ Official identifier strategy:
 
 **ULID**
 
+ULID is the single official identifier strategy for public/business entities.
+
 - ULIDs are preferred for public/business entities.
 - Sortable identifiers improve indexing behavior.
 - Identifiers should remain opaque externally.
-
-Internal numeric IDs may exist internally but should never be exposed publicly.
+- Internal numeric IDs may exist internally but must never be exposed publicly.
 
 ---
 
@@ -63,6 +64,98 @@ Exceptions may include:
 - Tenant isolation is mandatory.
 - Database design must reinforce tenant safety.
 - Cross‑tenant leakage is forbidden.
+
+---
+
+## 5.1 Tenant Isolation Enforcement
+
+Core Platform enforces tenant isolation through multiple layers:
+
+### A. Global Tenant Scopes
+
+- Tenant‑owned entities should use global Eloquent tenant scopes by default.
+- Cross‑tenant queries require explicit bypass mechanisms.
+- Bypasses should remain highly restricted and auditable.
+
+Valid bypass scenarios include:
+
+- platform admin workflows
+- operational tooling
+- maintenance workflows
+
+### B. Tenant Middleware
+
+- Tenant resolution middleware is mandatory.
+- Requests must resolve tenant context before business execution.
+- Unresolved tenant context should fail fast.
+
+### C. Tenant Architecture Tests
+
+- Automated tests must validate tenant isolation.
+- Cross‑tenant leakage tests are mandatory.
+- Critical modules require tenant isolation test coverage.
+
+Examples:
+
+- tenant A cannot access tenant B data
+- filters cannot bypass tenant scope
+- includes cannot bypass tenant scope
+
+### D. Static Analysis Rules
+
+- Static analysis should help detect unscoped tenant queries.
+- Dangerous bypass patterns should be minimized.
+- Explicit tenant bypasses should remain reviewable.
+
+### E. Documentation Clarifications
+
+- Tenant isolation is a platform‑level invariant, not an implementation detail.
+
+---
+
+## 5.1 Tenant Isolation Enforcement
+
+Core Platform enforces tenant isolation through multiple layers:
+
+### A. Global Tenant Scopes
+
+- Tenant‑owned entities should use global Eloquent tenant scopes by default.
+- Cross‑tenant queries require explicit bypass mechanisms.
+- Bypasses should remain highly restricted and auditable.
+
+Valid bypass scenarios include:
+
+- platform admin workflows
+- operational tooling
+- maintenance workflows
+
+### B. Tenant Middleware
+
+- Tenant resolution middleware is mandatory.
+- Requests must resolve tenant context before business execution.
+- Unresolved tenant context should fail fast.
+
+### C. Tenant Architecture Tests
+
+- Automated tests must validate tenant isolation.
+- Cross‑tenant leakage tests are mandatory.
+- Critical modules require tenant isolation test coverage.
+
+Examples:
+
+- tenant A cannot access tenant B data
+- filters cannot bypass tenant scope
+- includes cannot bypass tenant scope
+
+### D. Static Analysis Rules
+
+- Static analysis should help detect unscoped tenant queries.
+- Dangerous bypass patterns should be minimized.
+- Explicit tenant bypasses should remain reviewable.
+
+### E. Documentation Clarifications
+
+- Tenant isolation is a platform‑level invariant, not an implementation detail.
 
 ---
 

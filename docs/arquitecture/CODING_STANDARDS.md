@@ -238,14 +238,31 @@ All business logic must be tenant‑aware by default.
 - unscoped tenant queries
 - cross‑tenant access without explicit authorization
 
+Tenant isolation must be enforced through multiple layers:
+
+- global Eloquent tenant scopes
+- tenant resolution middleware
+- policy‑based authorization
+- tenant architecture tests
+- static analysis rules
+
+Tenant isolation must be enforced through multiple layers:
+
+- global Eloquent tenant scopes
+- tenant resolution middleware
+- policy‑based authorization
+- tenant architecture tests
+- static analysis rules
+
 ---
 
-## 17. UUID Standard
+## 17. ULID Standard
 
-UUIDs are the official identifier strategy.
+ULID is the official public/business identifier strategy.
 
-- Public entities should prefer UUIDs.
+- Public entities should prefer ULIDs.
 - IDs should remain opaque externally.
+- Internal numeric IDs may exist internally but must never be exposed publicly.
 
 ---
 
