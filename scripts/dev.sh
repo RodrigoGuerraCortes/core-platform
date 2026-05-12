@@ -3,6 +3,9 @@ set -euo pipefail
 
 # ------------------------------------------------------------------
 # dev.sh — Start local development environment
+#
+# Backend runs inside Docker (nginx + php-fpm).
+# Frontend Vite dev server runs on host.
 # ------------------------------------------------------------------
 
 log() { echo "[dev] $*"; }
@@ -13,12 +16,6 @@ docker info >/dev/null 2>&1 || { echo "[dev] Docker is not running. Please start
 log "Starting containers (if not already up)..."
 docker compose up -d
 
-log "Starting backend dev server..."
-cd backend
-php artisan serve --host=0.0.0.0 --port=8000 &
-BACKEND_PID=$!
-cd ..
-
 log "Starting frontend dev server..."
 cd frontend
 npm run dev &
@@ -28,10 +25,8 @@ cd ..
 log "Optionally start queue worker? (y/N)"
 read -r START_QUEUE
 if [[ "$START_QUEUE" =~ ^[Yy]$ ]]; then
-    cd backend
-    php artisan queue:work &
+    docker compose exec -T app php artisan queue:work &
     QUEUE_PID=$!
-    cd ..
     log "Queue worker started (PID $QUEUE_PID)."
 fi
 
@@ -42,5 +37,5 @@ log "  Frontend: http://localhost:5173"
 log "  Press Ctrl+C to stop."
 log "============================================"
 
-trap "kill $BACKEND_PID $FRONTEND_PID ${QUEUE_PID:-} 2>/dev/null; exit" INT TERM
+trap "kill $FRONTEND_PID ${QUEUE_PID:-} 2>/dev/null; exit" INT TERM
 wait

@@ -14,84 +14,63 @@ err() { echo "[setup] ERROR: $*" >&2; exit 1; }
 log "Validating dependencies..."
 command -v docker       >/dev/null 2>&1 || err "docker is required"
 command -v docker compose >/dev/null 2>&1 || err "docker compose is required"
-command -v php          >/dev/null 2>&1 || err "php is required"
-command -v composer     >/dev/null 2>&1 || err "composer is required"
 command -v node         >/dev/null 2>&1 || err "node is required"
 command -v npm          >/dev/null 2>&1 || err "npm is required"
 log "All dependencies found."
 
-# ---- 2. Backend setup ----
+# ---- 2. Backend setup (inside Docker) ----
 log "Setting up backend..."
-cd backend
 
-if [ ! -f .env ]; then
-    cp .env.example .env
-    log ".env created from .env.example"
-fi
-
-composer install --no-interaction --prefer-dist
-
-if [ -z "$(php artisan key:generate --show 2>/dev/null)" ]; then
-    php artisan key:generate
-    log "Application key generated"
-fi
-
-cd ..
-
-# ---- 3. Frontend setup ----
-log "Setting up frontend..."
-cd frontend
-npm install
-cd ..
-
-# ---- 4. Docker ----
-log "Building and starting Docker containers..."
+# Build and start containers first so we can run commands inside them
 docker compose build
 docker compose up -d
 
-# ---- 5. Wait for PostgreSQL ----
+# Wait for PostgreSQL
 log "Waiting for PostgreSQL..."
 until docker compose exec -T postgres pg_isready -U app 2>/dev/null; do
     sleep 2
 done
 log "PostgreSQL is ready."
 
-# ---- 6. Migrations & seeders ----
-cd backend
-php artisan migrate --force
-php artisan db:seed --force
-cd ..
-
-# ---- 7. Storage symlink ----
-cd backend
-php artisan storage:link --force 2>/dev/null || true
-cd ..
-
-# ---- 8. Filament install (if not already) ----
-cd backend
-if [ ! -d vendor/filament ]; then
-    composer require filament/filament --no-interaction
-    php artisan filament:install --panels --no-interaction 2>/dev/null || true
+# Copy .env if missing (on host, but we'll copy into container later)
+if [ ! -f backend/.env ]; then
+    cp backend/.env.example backend/.env
+    log ".env created from .env.example"
 fi
+
+# Install composer dependencies inside container
+docker compose exec -T app composer install --no-interaction --prefer-dist
+
+# Generate app key if missing (inside container)
+if [ -z "$(docker compose exec -T app php artisan key:generate --show 2>/dev/null)" ]; then
+    docker compose exec -T app php artisan key:generate
+    log "Application key generated"
+fi
+
+# ---- 3. Frontend setup (host-side) ----
+log "Setting up frontend..."
+cd frontend
+npm install
 cd ..
 
-# ---- 9. Quick validation ----
+# ---- 4. Migrations & seeders (inside container) ----
+docker compose exec -T app php artisan migrate --force
+docker compose exec -T app php artisan db:seed --force
+
+# ---- 5. Storage symlink (inside container) ----
+docker compose exec -T app php artisan storage:link --force 2>/dev/null || true
+
+# ---- 6. Quick validation (inside container) ----
 log "Running smoke tests..."
-cd backend
-php artisan test --testsuite=Feature --stop-on-failure 2>/dev/null || log "No Feature tests yet, skipping."
-cd ..
+docker compose exec -T app php artisan test --testsuite=Feature --stop-on-failure 2>/dev/null || log "No Feature tests yet, skipping."
 
 log "Running Pint..."
-cd backend
-./vendor/bin/pint --test 2>/dev/null || log "Pint found issues (non‑blocking)."
-cd ..
+docker compose exec -T app ./vendor/bin/pint --test 2>/dev/null || log "Pint found issues (non‑blocking)."
 
 log "Running PHPStan (lightweight)..."
-cd backend
-./vendor/bin/phpstan analyse --level=1 app 2>/dev/null || log "PHPStan found issues (non‑blocking)."
-cd ..
+docker compose exec -T app ./vendor/bin/phpstan analyse --level=1 app 2>/dev/null || log "PHPStan found issues (non‑blocking)."
 
-# ---- 10. Summary ----
+# ---- 7. Summary ----
 log "============================================"
 log "  Core Platform bootstrap complete!"
 log "  Backend : http://localhost:8000"

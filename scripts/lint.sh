@@ -3,16 +3,17 @@ set -euo pipefail
 
 # ------------------------------------------------------------------
 # lint.sh — Unified code quality entrypoint
+#
+# Runs inside Docker container.
+# Fails on any linting error.
 # ------------------------------------------------------------------
 
 log() { echo "[lint] $*"; }
 
-cd backend
-
 log "Running Pint..."
-./vendor/bin/pint --test "$@" || true
+docker compose exec -T app ./vendor/bin/pint --test "$@"
 
 log "Running PHPStan..."
-./vendor/bin/phpstan analyse --level=1 app "$@" || true
+docker compose exec -T app ./vendor/bin/phpstan analyse --level=1 app "$@"
 
-log "Lint checks completed."
+log "Lint checks passed."
