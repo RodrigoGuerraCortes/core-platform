@@ -126,3 +126,22 @@ The following capabilities are **planned but intentionally postponed**:
 ## 8. Final Statement
 
 Identity/Auth provides stable identity infrastructure for all future domain applications while remaining isolated from business authorization concerns. It is a foundational, reusable module that every other module depends on, yet it does not dictate how those modules enforce their own access rules.
+
+---
+
+## 9. Packaging Boundaries
+
+The Identity/Auth module is designed to remain reusable across multiple domain applications.
+
+The module should avoid:
+- business-specific rules
+- tenant-specific logic
+- application-specific authorization behavior
+- domain coupling
+
+The module is intentionally being designed as future package-extraction candidate.
+
+Current implementation remains inside the modular monolith,
+but boundaries should remain extraction-ready.
+
+Future extraction must not require major architectural redesign.
