@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Core\IdentityAuth;
 
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class IdentityAuthServiceProvider extends ServiceProvider
@@ -26,6 +28,20 @@ class IdentityAuthServiceProvider extends ServiceProvider
             return url('/auth/reset-password')
                 .'?token='.$token
                 .'&email='.urlencode((string) $notifiable->getEmailForPasswordReset());
+        });
+
+        // Configure the email verification URL for the VerifyEmail notification.
+        // Laravel defaults to route('verification.verify') which is not defined here.
+        // Generates a 60-minute signed URL pointing to our auth.email.verify route.
+        VerifyEmail::createUrlUsing(function (object $notifiable): string {
+            return URL::temporarySignedRoute(
+                'auth.email.verify',
+                now()->addMinutes(60),
+                [
+                    'id' => $notifiable->getKey(),
+                    'hash' => sha1($notifiable->getEmailForVerification()),
+                ],
+            );
         });
     }
 }

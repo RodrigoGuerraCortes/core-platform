@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\IdentityAuth\Http\Controllers\AuthController;
+use App\Core\IdentityAuth\Http\Controllers\EmailVerificationController;
 use App\Core\IdentityAuth\Http\Controllers\PasswordController;
 use App\Core\IdentityAuth\Http\Controllers\TokenController;
 use Illuminate\Support\Facades\Route;
@@ -24,4 +25,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::delete('/auth/token/current', [TokenController::class, 'revokeCurrent'])
         ->name('auth.token.revoke-current');
+
+    Route::get('/auth/verify-email/{id}/{hash}', [EmailVerificationController::class, 'verifyEmail'])
+        ->middleware('signed')
+        ->name('auth.email.verify');
+
+    Route::post('/auth/resend-verification', [EmailVerificationController::class, 'resendVerification'])
+        ->name('auth.email.resend-verification');
 });
