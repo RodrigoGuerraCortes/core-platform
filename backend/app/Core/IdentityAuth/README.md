@@ -121,14 +121,15 @@ Used for platform administration.
 - [x] `DELETE /auth/token/current`
 - [x] `POST /auth/login`
 - [x] `POST /auth/logout`
-- [x] Pest feature tests for current user, token auth, and session auth
+- [x] `POST /auth/forgot-password`
+- [x] `POST /auth/reset-password`
+- [x] `GET /auth/verify-email/{id}/{hash}`
+- [x] `POST /auth/resend-verification`
+- [x] Pest feature tests (52 tests, 164 assertions)
 - [x] Basic auth events
 - [x] Audit integration hooks
 - [x] Filament platform admin guard hardening
-
-### Next
-
-- [ ] Auth documentation final review
+- [x] Auth documentation final review
 
 ### Future / Out of Scope
 
@@ -139,6 +140,7 @@ Used for platform administration.
 - [ ] MFA
 - [ ] Device/session management UI
 - [ ] Fine-grained token scopes
+- [ ] Audit persistence (owned by future Audit module)
 
 ## Testing
 
@@ -149,3 +151,10 @@ Tests are located in `backend/tests/Feature/IdentityAuth/`.
 | `GetCurrentUserTest.php` | `GET /auth/me` — unauthenticated, authenticated, response shape |
 | `TokenAuthenticationTest.php` | `POST /auth/token`, `DELETE /auth/token/current` — credentials, token lifecycle |
 | `SessionAuthenticationTest.php` | `POST /auth/login`, `POST /auth/logout` — session lifecycle, token isolation |
+| `PasswordResetTest.php` | `POST /auth/forgot-password`, `POST /auth/reset-password` — token validation, password update |
+| `EmailVerificationTest.php` | `GET /auth/verify-email/{id}/{hash}`, `POST /auth/resend-verification` — signed URL, verification state |
+| `AuthEventsTest.php` | All 9 internal auth events dispatched at the correct points |
+| `AuthAuditHooksTest.php` | Audit payload factory, sink boundary, payload safety rules |
+| `FilamentPlatformAdminAccessTest.php` | `is_platform_admin` access boundary, Bearer token exclusion |
+
+**Total: 52 tests, 164 assertions — full suite passing.**

@@ -25,21 +25,27 @@ The Filament admin login flow is the primary mechanism for platform administrato
 **Flow:**
 
 1. Platform admin opens `/admin`.
-2. Filament presents the login form.
+2. Filament presents the login form at `/admin/login`.
 3. User submits email and password.
 4. Credentials are validated against the `users` table.
 5. A server‑controlled session is created.
-6. User is redirected to the Filament dashboard.
-7. Access should be restricted to users with `is_platform_admin = true`.
+6. Filament calls `canAccessPanel()` on the User model.
+7. If `is_platform_admin = false`, the request is rejected with `403 Forbidden`.
+8. If `is_platform_admin = true`, the user is admitted to the Filament dashboard.
+
+**Implemented access boundary:**
+
+- The `User` model implements `Filament\Models\Contracts\FilamentUser`.
+- `canAccessPanel(Panel $panel): bool` returns `$this->is_platform_admin === true`.
+- Unauthenticated requests are redirected to `/admin/login`.
+- Authenticated users with `is_platform_admin = false` receive `403 Forbidden`.
+- API Bearer tokens do not grant access; Filament uses the `web` guard exclusively.
 
 **Clarifications:**
 
-- Filament uses session‑based authentication exclusively.
 - The `is_platform_admin` flag is an operational indicator, not a business RBAC role.
-- Later, formal authorization (Roles/Permissions) may replace or extend the `is_platform_admin` flag.
+- Later, formal authorization (Roles/Permissions) may replace or extend the `is_platform_admin` flag without changing the contract.
 - Platform admin actions must eventually be auditable (login, logout, failed attempts).
-- Platform admin login uses the same global `users` table; it is not a separate admin identity store.
-- API tokens do not grant access to the Filament admin panel; Filament access remains session‑based.
 
 ---
 
@@ -157,29 +163,34 @@ This flow returns the authenticated user’s identity.
 2. Token is validated using the framework password broker mechanism, including expiration and single‑use behavior.
 3. Password is updated using Laravel’s configured hashing algorithm.
 4. Reset token is consumed (cannot be reused).
-5. A password‑changed event should eventually be auditable.
+5. A `PasswordChanged` event is dispatched (auditable via the audit hook boundary).
 
 **Clarifications:**
 
-- Session/token invalidation after password change is **future work** (not implemented in Phase 1).
-- The password reset flow does not automatically log the user in.
+- The password reset flow does **not** automatically log the user in after a successful reset.
+- Session and token invalidation after password change are **future security hardening** (not implemented in Phase 1).
+- The reset token is never included in any audit payload.
 
 ---
 
 ## 10. Email Verification Flow
 
+**Implemented route:** `GET /auth/verify-email/{id}/{hash}`
+
 **Flow:**
 
-1. System generates a signed verification link (using Laravel’s signed URL mechanism).
-2. User opens the verification link.
-3. Signature and expiration are validated.
-4. `email_verified_at` is set to the current timestamp.
-5. A verification event should eventually be auditable.
+1. When a user registers or requests resend, a signed URL is generated using `URL::temporarySignedRoute('auth.email.verify', now()->addMinutes(60), ['id' => ..., 'hash' => sha1(email)])`.
+2. The link is delivered to the user via the `VerifyEmail` notification.
+3. The user opens the link (GET request).
+4. The route validates: authenticated session/token + valid signature + non-expired link.
+5. `email_verified_at` is set to the current timestamp.
+6. An `EmailVerified` event is dispatched.
 
 **Clarifications:**
 
-- The final HTTP method may follow Laravel’s signed verification flow (typically a GET request).
-- The verification link is time‑limited.
+- The verification route currently requires the user to be authenticated (Bearer token or session). Future onboarding flows may revisit this if public signed-link verification is needed.
+- The verification link is valid for 60 minutes.
+- The hash is `sha1($user->email)` — it validates that the link was issued for the correct email.
 
 ---
 
@@ -244,23 +255,28 @@ Common failure scenarios and their conceptual behavior:
 
 ---
 
-## 14. Audit Events
+## 14. Audit Hooks Flow
 
-The following events should eventually emit audit records. Audit implementation may be incremental; not every event needs to be logged from day one.
+Identity/Auth exposes an audit boundary between internal events and future audit persistence.
 
-- login succeeded
-- login failed
-- logout
-- token created
-- token revoked
-- password reset requested
-- password changed
-- email verified
-- verification resent
-- platform admin login
-- unauthorized admin access attempt
+**Flow:**
 
-Audit entries should include at minimum: actor ID, event type, timestamp, and relevant context (e.g., IP address, user agent).
+1. An auth action (login, logout, password reset, etc.) completes.
+2. The action or controller dispatches an internal auth event (e.g., `UserLoggedIn`, `LoginFailed`).
+3. `RecordAuthAuditEvent` listener receives the event.
+4. `AuthAuditPayloadFactory::fromEvent()` translates the event into an `AuthAuditEvent` value object.
+5. The `AuthAuditEvent` is passed to the registered `AuthAuditSink`.
+6. **The current sink is `NullAuthAuditSink` — a deliberate no-op.** Nothing is written to the database.
+
+**Payload safety rules — payloads must never contain:**
+- Raw passwords or password hashes
+- Plain-text reset tokens or API tokens
+- Roles, permissions, or tenant context
+- Request body or authorization header content
+
+**Payload fields allowed:** event name, actor/subject user ID, email address, token label (name), IP address, user agent, timestamp.
+
+**Future integration:** a future Audit module may implement `AuthAuditSink` and replace the null sink in the container without modifying Identity/Auth code.
 
 ---
 

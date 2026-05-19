@@ -77,8 +77,9 @@ Explicitly excluded from Phase 1:
 
 ### Audit
 
-- Authentication events (login, logout, token creation, password reset) must be auditable.
-- The Audit module consumes events emitted by Identity/Auth.
+- Authentication events (login, logout, token creation, password reset, etc.) are dispatched as internal events.
+- An audit hook boundary (`AuthAuditSink` / `AuthAuditPayloadFactory`) is implemented. The current sink is a no-op; the Audit module will own persistence.
+- Audit payloads must never include passwords, raw tokens, roles, permissions, or tenant context.
 
 ### Notifications
 

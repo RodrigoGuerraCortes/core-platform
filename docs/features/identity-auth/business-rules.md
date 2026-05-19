@@ -28,9 +28,11 @@ This document defines the business and operational rules that govern the Identit
 
 - **Platform admins are operational users.** They manage tenants, global settings, and platform‑level operations.
 - **Platform admin status is not business RBAC.** The `is_platform_admin` flag is a bootstrap/operational indicator, not a replacement for the Roles/Permissions module.
+- **Filament admin access requires `is_platform_admin = true`.** The User model implements `FilamentUser::canAccessPanel()`, which returns `$this->is_platform_admin === true`. Users with `is_platform_admin = false` receive `403 Forbidden`.
+- **API Bearer tokens do not grant Filament access.** Filament uses the `web` (session) guard exclusively.
 - **Platform admin access is for platform operations only.** It does not grant automatic access to tenant‑scoped business resources.
 - **Platform admin behavior must be auditable.** Every action performed by a platform admin must be traceable.
-- **`is_platform_admin` is a bootstrap/operational flag.** It exists on the `users` table but is not part of the Identity module’s core responsibility. Formal role‑based administration is owned by the Authorization module.
+- **`is_platform_admin` is a bootstrap/operational flag.** Future Roles/Permissions may replace or extend this check without changing the `canAccessPanel()` contract.
 
 ---
 
@@ -103,19 +105,11 @@ This document defines the business and operational rules that govern the Identit
 
 ## 11. Audit Rules
 
-The following events must eventually be auditable. Audit implementation may be incremental; not every event needs to be logged from day one.
-
-- login
-- logout
-- failed login attempt
-- password reset requested
-- password changed
-- email verified
-- token created
-- token revoked
-- platform admin access
-
-Audit entries should include at minimum: actor ID, event type, timestamp, and relevant context (e.g., IP address, user agent).
+- **Audit hooks are implemented as an event‑to‑payload boundary.** Identity/Auth dispatches internal events; `RecordAuthAuditEvent` listener converts them into `AuthAuditEvent` payloads and passes them to the registered `AuthAuditSink`.
+- **Audit persistence is not yet implemented.** The current `NullAuthAuditSink` is a deliberate no‑op. The Audit module will own persistence.
+- **Audit payloads must never contain:** raw passwords or password hashes, plain‑text reset tokens, plain‑text API tokens, roles, permissions, tenant context, request body content, or authorization header content.
+- **Audit payloads may contain:** event name, actor/subject user ID, attempted email address, token label (name), IP address, user agent, and timestamp.
+- **All significant auth actions are already covered** by internal events: login, logout, login failure, token issuance, token revocation, password reset request, password change, email verification, and verification resend.
 
 ---
 

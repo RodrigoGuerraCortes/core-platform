@@ -259,3 +259,34 @@ Tests may be added **alongside each step**, not deferred to the end.
 This implementation plan enables Identity/Auth to be built incrementally while preserving module boundaries, authentication clarity, and future package extraction readiness. The module remains independent from authorization, tenancy, and business access control, ensuring that authentication infrastructure can be reused across all future domain applications without architectural coupling.
 
 Authentication is infrastructure. Authorization is business logic. This separation is intentional and will be preserved throughout the platform’s evolution.
+---
+
+## Implementation Status
+
+> Last updated: 2026-05-19
+
+- [x] Module skeleton
+- [x] Service provider registration
+- [x] Current user endpoint (`GET /auth/me`)
+- [x] API token issuance (`POST /auth/token`)
+- [x] Current token revocation (`DELETE /auth/token/current`)
+- [x] Session login (`POST /auth/login`)
+- [x] Session logout (`POST /auth/logout`)
+- [x] Password reset foundation (`POST /auth/forgot-password`, `POST /auth/reset-password`)
+- [x] Email verification foundation (`GET /auth/verify-email/{id}/{hash}`, `POST /auth/resend-verification`)
+- [x] Internal auth events (9 events: `UserLoggedIn`, `UserLoggedOut`, `LoginFailed`, `SanctumTokenIssued`, `SanctumTokenRevoked`, `PasswordResetRequested`, `PasswordChanged`, `EmailVerified`, `VerificationEmailResent`)
+- [x] Audit integration hooks (`AuthAuditSink` interface, `NullAuthAuditSink`, `AuthAuditPayloadFactory`, `RecordAuthAuditEvent` listener)
+- [x] Filament platform admin guard hardening (`canAccessPanel()` on User model, `is_platform_admin = true` required)
+- [x] Pest feature coverage (52 tests, 164 assertions)
+
+---
+
+## Remaining Work
+
+The following items are planned but not yet implemented. **These must not be treated as technical debt unless explicitly required by product scope.**
+
+- Auth documentation final review
+- Future Audit module persistence (the `AuthAuditSink` boundary is ready; persistence is owned by the Audit module)
+- Future Roles/Permissions integration (may replace or extend `is_platform_admin` for Filament access)
+- Future Tenancy integration (tenant context resolution lives entirely outside Identity/Auth)
+- Future MFA, OAuth, or SSO if product validation requires it

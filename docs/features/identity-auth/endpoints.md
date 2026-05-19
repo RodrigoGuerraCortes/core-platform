@@ -1,5 +1,57 @@
 # Core Platform — Identity/Auth Endpoints Definition
 
+## Implemented Endpoints
+
+> Status: fully implemented as of 2026-05-19. All endpoints are covered by Pest feature tests.
+
+### API / Token (Sanctum, stateless)
+
+| Method | Path | Description | Auth required |
+|---|---|---|---|
+| `POST` | `/auth/token` | Issue a Sanctum Bearer token | No |
+| `DELETE` | `/auth/token/current` | Revoke the currently active Bearer token | Bearer token |
+| `GET` | `/auth/me` | Return the authenticated user identity | Bearer token or session |
+
+> **Recommended for Postman, API clients, mobile apps, and AI integrations.** Use `POST /auth/token` to obtain a token, then pass it as `Authorization: Bearer <token>` on subsequent requests.
+
+### Session (web, stateful)
+
+| Method | Path | Description | Auth required |
+|---|---|---|---|
+| `POST` | `/auth/login` | Create a session-based login | No (but CSRF cookie required at runtime) |
+| `POST` | `/auth/logout` | Invalidate the current session | Session |
+
+> Session endpoints use Laravel's CSRF middleware. Direct calls from Postman without CSRF handling will return `419 CSRF Token Mismatch`. Use the token flow for API/Postman testing.
+
+### Password Reset
+
+| Method | Path | Description | Auth required |
+|---|---|---|---|
+| `POST` | `/auth/forgot-password` | Request a password reset email | No |
+| `POST` | `/auth/reset-password` | Confirm reset with token and new password | No |
+
+> `POST /auth/forgot-password` always returns a generic success response regardless of whether the email exists.
+
+### Email Verification
+
+| Method | Path | Description | Auth required |
+|---|---|---|---|
+| `GET` | `/auth/verify-email/{id}/{hash}` | Verify email via signed URL | Bearer token or session (+ `signed` middleware) |
+| `POST` | `/auth/resend-verification` | Resend the verification email | Bearer token or session |
+
+> The verification link is a signed, time-limited URL (60 minutes). The verification route requires both authentication and a valid signature.
+
+### Filament Admin Panel
+
+| Method | Path | Description |
+|---|---|---|
+| `GET/POST` | `/admin/login` | Filament session-based admin login |
+| `GET` | `/admin` | Filament admin panel (requires `is_platform_admin = true`) |
+
+> Filament uses session authentication exclusively. API Bearer tokens do **not** grant access to `/admin`. Non-admin users receive `403 Forbidden`. Unauthenticated users are redirected to `/admin/login`.
+
+---
+
 ## 1. Authentication Strategy
 
 The Identity/Auth module uses a **hybrid authentication strategy** that supports two authentication models simultaneously:
