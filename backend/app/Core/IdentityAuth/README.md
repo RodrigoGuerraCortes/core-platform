@@ -101,9 +101,14 @@ Used for platform administration.
 
 **Endpoint:** `/admin/login`
 
-- Filament uses its own session-based login, independent of the API token and session flows above
-- API Bearer tokens do **not** grant access to the Filament admin panel
-- Filament admin access is currently controlled by the `is_platform_admin` flag on the `User` model
+- Filament uses its own session-based login, independent of the API token and session flows above.
+- API Bearer tokens do **not** grant access to the Filament admin panel. Filament uses the `web` guard exclusively.
+- Filament admin access is restricted to users with `is_platform_admin = true`.
+- The User model implements `FilamentUser::canAccessPanel()` and returns `$this->is_platform_admin === true`.
+- This is **operational platform access**, not business RBAC. There are no roles or permissions involved.
+- Authenticated users with `is_platform_admin = false` receive `403 Forbidden`.
+- Unauthenticated requests are redirected to `/admin/login`.
+- Future Roles/Permissions may replace or extend this check without changing the contract.
 
 ## Implementation Roadmap
 
@@ -119,10 +124,10 @@ Used for platform administration.
 - [x] Pest feature tests for current user, token auth, and session auth
 - [x] Basic auth events
 - [x] Audit integration hooks
+- [x] Filament platform admin guard hardening
 
 ### Next
 
-- [ ] Filament platform admin guard hardening
 - [ ] Auth documentation final review
 
 ### Future / Out of Scope
