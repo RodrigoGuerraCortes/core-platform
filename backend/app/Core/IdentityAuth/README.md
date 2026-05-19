@@ -41,6 +41,29 @@ The following events are dispatched by the Identity/Auth module:
 - **Audit persistence is not implemented yet.** The Audit module may consume these events in a future step via listeners.
 - Events carry enough context (user, IP address, user agent where available) for future audit integration.
 
+## Audit Hooks
+
+Identity/Auth exposes an audit boundary that sits between internal events and future audit persistence.
+
+**How it works:**
+1. Identity/Auth dispatches internal events (see table above) for all significant auth actions.
+2. `RecordAuthAuditEvent` (listener) receives each event and delegates to `AuthAuditPayloadFactory`.
+3. `AuthAuditPayloadFactory` translates the event into an `AuthAuditEvent` value object with safe, structured fields.
+4. The `AuthAuditEvent` is handed to the registered `AuthAuditSink`.
+5. **The current sink is `NullAuthAuditSink` — a deliberate no-op.** Nothing is written to the database.
+
+**Future integration path:**
+- A future Audit module may implement `AuthAuditSink` and bind its implementation in the container, replacing the null sink without touching Identity/Auth code.
+- This keeps Identity/Auth decoupled from audit storage.
+
+**Safety rules — payloads must never contain:**
+- Raw passwords or password hashes
+- Plain-text API tokens or reset tokens
+- Roles, permissions, or tenant context
+- Request body content or authorization headers
+
+**Payloads may contain:** event name, actor/subject user ID, attempted email address, token label (name), IP address, user agent, and timestamp.
+
 ## Runtime Authentication Flows
 
 ### API Token Flow
@@ -95,12 +118,10 @@ Used for platform administration.
 - [x] `POST /auth/logout`
 - [x] Pest feature tests for current user, token auth, and session auth
 - [x] Basic auth events
+- [x] Audit integration hooks
 
 ### Next
 
-- [ ] Password reset foundation
-- [ ] Email verification foundation
-- [ ] Audit integration hooks
 - [ ] Filament platform admin guard hardening
 - [ ] Auth documentation final review
 
