@@ -19,6 +19,28 @@ The Identity/Auth module is responsible for:
 - **Tenant membership** is managed by the Tenancy module.
 - **Authorization** is managed by the Roles/Permissions module.
 
+## Internal Events
+
+The following events are dispatched by the Identity/Auth module:
+
+| Event | Dispatched when |
+|---|---|
+| `UserLoggedIn` | Session login succeeds |
+| `UserLoggedOut` | Session logout occurs |
+| `LoginFailed` | Session or token login fails due to invalid credentials |
+| `SanctumTokenIssued` | A Sanctum API token is created successfully |
+| `SanctumTokenRevoked` | The current Sanctum API token is revoked |
+| `PasswordResetRequested` | A forgot-password request is received (always dispatched, regardless of whether the email exists) |
+| `PasswordChanged` | A password reset completes successfully |
+| `EmailVerified` | A user's email is newly marked as verified |
+| `VerificationEmailResent` | A verification email is sent to an unverified user |
+
+**Rules:**
+- Events are **internal application events** — they are not exposed over HTTP.
+- Events must **not** contain: raw passwords, plain-text API tokens, roles, permissions, or tenant data.
+- **Audit persistence is not implemented yet.** The Audit module may consume these events in a future step via listeners.
+- Events carry enough context (user, IP address, user agent where available) for future audit integration.
+
 ## Runtime Authentication Flows
 
 ### API Token Flow
@@ -72,12 +94,12 @@ Used for platform administration.
 - [x] `POST /auth/login`
 - [x] `POST /auth/logout`
 - [x] Pest feature tests for current user, token auth, and session auth
+- [x] Basic auth events
 
 ### Next
 
 - [ ] Password reset foundation
 - [ ] Email verification foundation
-- [ ] Basic auth events
 - [ ] Audit integration hooks
 - [ ] Filament platform admin guard hardening
 - [ ] Auth documentation final review

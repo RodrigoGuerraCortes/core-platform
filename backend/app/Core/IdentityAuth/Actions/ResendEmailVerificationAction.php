@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\IdentityAuth\Actions;
 
+use App\Core\IdentityAuth\Events\VerificationEmailResent;
 use App\Models\User;
 
 class ResendEmailVerificationAction
@@ -23,5 +24,7 @@ class ResendEmailVerificationAction
         }
 
         $user->sendEmailVerificationNotification();
+
+        event(new VerificationEmailResent($user));
     }
 }

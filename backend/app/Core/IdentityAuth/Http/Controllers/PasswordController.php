@@ -8,6 +8,7 @@ use App\Core\IdentityAuth\Actions\RequestPasswordResetAction;
 use App\Core\IdentityAuth\Actions\ResetPasswordAction;
 use App\Core\IdentityAuth\DTOs\ForgotPasswordData;
 use App\Core\IdentityAuth\DTOs\ResetPasswordData;
+use App\Core\IdentityAuth\Events\PasswordResetRequested;
 use App\Core\IdentityAuth\Http\Requests\ForgotPasswordRequest;
 use App\Core\IdentityAuth\Http\Requests\ResetPasswordRequest;
 use Illuminate\Http\JsonResponse;
@@ -18,12 +19,14 @@ class PasswordController
         ForgotPasswordRequest $request,
         RequestPasswordResetAction $action,
     ): JsonResponse {
-        $action->execute(new ForgotPasswordData(
-            email: $request->validated('email'),
-        ));
+        $email = $request->validated('email');
 
-        // Always return the same generic message regardless of whether
-        // the email exists, to avoid user enumeration.
+        $action->execute(new ForgotPasswordData(email: $email));
+
+        // Always dispatch and always return the same generic message,
+        // regardless of whether the email exists, to avoid user enumeration.
+        event(new PasswordResetRequested($email, $request->ip(), $request->userAgent()));
+
         return response()->json([
             'message' => 'If that email exists, a password reset link has been sent.',
         ]);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\IdentityAuth\Actions;
 
+use App\Core\IdentityAuth\Events\EmailVerified;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 
@@ -26,6 +27,7 @@ class VerifyEmailAction
         $user->markEmailAsVerified();
 
         event(new Verified($user));
+        event(new EmailVerified($user));
 
         return true;
     }

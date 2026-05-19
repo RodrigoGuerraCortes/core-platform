@@ -7,6 +7,8 @@ namespace App\Core\IdentityAuth\Http\Controllers;
 use App\Core\IdentityAuth\Actions\IssueSanctumTokenAction;
 use App\Core\IdentityAuth\Actions\RevokeCurrentTokenAction;
 use App\Core\IdentityAuth\DTOs\TokenIssueData;
+use App\Core\IdentityAuth\Events\LoginFailed;
+use App\Core\IdentityAuth\Events\SanctumTokenIssued;
 use App\Core\IdentityAuth\Http\Requests\TokenIssueRequest;
 use App\Core\IdentityAuth\Http\Resources\TokenResource;
 use Illuminate\Http\JsonResponse;
@@ -27,11 +29,15 @@ class TokenController
         $result = $action->execute($data);
 
         if ($result === null) {
+            event(new LoginFailed($data->email, $request->ip(), $request->userAgent()));
+
             return response()->json([
                 'message' => 'Invalid credentials',
                 'errors' => [],
             ], 401);
         }
+
+        event(new SanctumTokenIssued($result->accessToken->tokenable, $data->tokenName, $request->ip(), $request->userAgent()));
 
         return new TokenResource($result);
     }

@@ -8,6 +8,8 @@ use App\Core\IdentityAuth\Actions\GetCurrentUserAction;
 use App\Core\IdentityAuth\Actions\LoginUserAction;
 use App\Core\IdentityAuth\Actions\LogoutUserAction;
 use App\Core\IdentityAuth\DTOs\LoginData;
+use App\Core\IdentityAuth\Events\LoginFailed;
+use App\Core\IdentityAuth\Events\UserLoggedIn;
 use App\Core\IdentityAuth\Http\Requests\LoginRequest;
 use App\Core\IdentityAuth\Http\Resources\AuthenticatedUserResource;
 use Illuminate\Http\JsonResponse;
@@ -38,6 +40,8 @@ class AuthController
         $user = $action->execute($loginData);
 
         if ($user === null) {
+            event(new LoginFailed($loginData->email, $request->ip(), $request->userAgent()));
+
             return response()->json([
                 'message' => 'Invalid credentials',
                 'errors' => [],
@@ -45,6 +49,8 @@ class AuthController
         }
 
         $request->session()->regenerate();
+
+        event(new UserLoggedIn($user, $request->ip(), $request->userAgent()));
 
         return new AuthenticatedUserResource($user);
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\IdentityAuth\Actions;
 
 use App\Core\IdentityAuth\DTOs\ResetPasswordData;
+use App\Core\IdentityAuth\Events\PasswordChanged;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -31,6 +32,8 @@ class ResetPasswordAction
                 $user->forceFill([
                     'password' => Hash::make($password),
                 ])->save();
+
+                event(new PasswordChanged($user, request()->ip(), request()->userAgent()));
             },
         );
 

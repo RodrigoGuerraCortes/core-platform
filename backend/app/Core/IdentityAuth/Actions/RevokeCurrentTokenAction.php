@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core\IdentityAuth\Actions;
 
+use App\Core\IdentityAuth\Events\SanctumTokenRevoked;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -25,7 +27,10 @@ class RevokeCurrentTokenAction
             $currentToken = $user->currentAccessToken();
 
             if ($currentToken !== null) {
+                $tokenName = $currentToken->name;
                 $currentToken->delete();
+
+                event(new SanctumTokenRevoked($user, $tokenName, $request->ip(), $request->userAgent()));
 
                 return;
             }
@@ -44,7 +49,12 @@ class RevokeCurrentTokenAction
         $accessToken = PersonalAccessToken::findToken($plainTextToken);
 
         if ($accessToken !== null) {
+            /** @var User|null $tokenUser */
+            $tokenUser = $accessToken->tokenable;
+            $tokenName = $accessToken->name;
             $accessToken->delete();
+
+            event(new SanctumTokenRevoked($tokenUser, $tokenName, $request->ip(), $request->userAgent()));
         }
     }
 }
