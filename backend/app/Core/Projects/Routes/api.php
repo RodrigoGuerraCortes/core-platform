@@ -7,15 +7,17 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 
 // All project routes require authentication, tenant resolution, and tenant membership.
-// Middleware order: auth → resolve tenant → validate membership → bind models.
+// Middleware order follows ADR-011:
 //
-// SubstituteBindings is placed LAST so that route model binding for {project} fires
-// AFTER TenantContext is set by tenant.resolve. Without this explicit ordering,
-// {project} binds without TenantScope active, creating cross-tenant data leakage.
+//   auth:sanctum → tenant.resolve → SubstituteBindings → tenant.member
 //
-// Cross-tenant access via {project} route model binding returns 404 (not 403) —
-// the existence of a resource in another tenant is never revealed.
-Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.member', SubstituteBindings::class])
+// SubstituteBindings MUST run AFTER tenant.resolve so that TenantContext is active
+// when route model binding resolves {project}. TenantScope filters the query to the
+// current tenant, making cross-tenant access return 404 (not 403).
+//
+// Placing SubstituteBindings before tenant.resolve is a critical security defect.
+// See ADR-011 for full rationale.
+Route::middleware(['auth:sanctum', 'tenant.resolve', SubstituteBindings::class, 'tenant.member'])
     ->group(function (): void {
         Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
         Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
