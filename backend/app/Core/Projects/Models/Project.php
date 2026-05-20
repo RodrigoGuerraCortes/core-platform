@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Projects\Models;
 
+use App\Core\Projects\Enums\ProjectStatus;
 use App\Core\Tenancy\Models\Concerns\BelongsToTenant;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,9 +30,18 @@ class Project extends Model
         'metadata',
     ];
 
+    // Model-level default mirrors the DB column default.
+    // Without this, Project::create(['name' => ...]) without an explicit status
+    // would leave $project->status as null in memory (the DB default doesn't
+    // propagate back to the in-memory model after INSERT).
+    protected $attributes = [
+        'status' => 'active',
+    ];
+
     protected function casts(): array
     {
         return [
+            'status' => ProjectStatus::class,
             'metadata' => 'array',
         ];
     }

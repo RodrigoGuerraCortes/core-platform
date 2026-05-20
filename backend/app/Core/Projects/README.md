@@ -23,7 +23,7 @@ Cross-tenant access via route model binding returns **404** (not 403) — the ex
 
 ## Authorization Model
 
-`ProjectPolicy` reads `membership_role` from `tenant_user` for the currently resolved tenant.
+`ProjectPolicy` reads `membership_role` via `MembershipResolver` (request-scoped cache). Multiple policy checks within the same request share one DB lookup per `user+tenant` combination.
 
 | Role | viewAny | view | create | update | delete |
 |---|---|---|---|---|---|
@@ -38,9 +38,9 @@ Cross-tenant access via route model binding returns **404** (not 403) — the ex
 
 ## Routes
 
-All routes require: `auth:sanctum` → `tenant.resolve` → `tenant.member` → `SubstituteBindings`
+All routes use `TenantRouteMiddleware::STACK` (ADR-011): `auth:sanctum` → `tenant.resolve` → `SubstituteBindings` → `tenant.member`
 
-> **Critical:** `SubstituteBindings` is placed AFTER `tenant.resolve` so that route model binding resolves `{project}` with `TenantScope` active. Placing it before would allow cross-tenant project access.
+`SubstituteBindings` runs **after** `tenant.resolve` so route model binding resolves `{project}` with `TenantScope` active. Cross-tenant access returns 404 — resource existence is not revealed.
 
 | Method | URI | Action | Policy |
 |---|---|---|---|
@@ -56,22 +56,24 @@ All routes require: `auth:sanctum` → `tenant.resolve` → `tenant.member` → 
 
 ```
 Core/Projects/
+├── Enums/
+│   └── ProjectStatus.php         # active | inactive | archived
 ├── Http/
 │   ├── Controllers/
-│   │   └── ProjectController.php
+│   │   └── ProjectController.php # paginate(15) on index
 │   ├── Requests/
-│   │   ├── StoreProjectRequest.php
+│   │   ├── StoreProjectRequest.php   # Rule::enum(ProjectStatus::class)
 │   │   └── UpdateProjectRequest.php
 │   └── Resources/
-│       └── ProjectResource.php
+│       └── ProjectResource.php   # status emitted as string value
 ├── Models/
-│   └── Project.php            # uses BelongsToTenant, SoftDeletes
+│   └── Project.php               # BelongsToTenant, status cast to enum, default 'active'
 ├── Policies/
-│   └── ProjectPolicy.php      # membership_role-based authorization
+│   └── ProjectPolicy.php         # uses MembershipResolver (cached lookup)
 ├── Providers/
 │   └── ProjectsServiceProvider.php
 ├── Routes/
-│   └── api.php
+│   └── api.php                   # Route::middleware(TenantRouteMiddleware::STACK)
 └── README.md
 ```
 
@@ -84,7 +86,9 @@ Supporting files (outside Core/Projects/):
 
 ## Tests
 
-`tests/Feature/Projects/ProjectApiTest.php` — **19 tests, 28 assertions**
+`tests/Feature/Projects/ProjectApiTest.php` — **27 tests**  
+`tests/Feature/MembershipResolverTest.php` — **6 tests**  
+`tests/Feature/Tenancy/TenantRouteBindingConventionTest.php` — **7 tests** (Block 5 — also validates this module)
 
 | Group | Count | Covers |
 |---|---|---|
@@ -92,7 +96,9 @@ Supporting files (outside Core/Projects/):
 | Authorization (owner) | 3 | create, update, delete allowed |
 | Authorization (admin) | 3 | create, update, delete allowed |
 | Authorization (member) | 5 | list/view allowed, write forbidden (3) |
-| Runtime | 4 | missing header (400), unauthenticated (401), tenant_id auto-fill, platform admin no bypass |
+| Runtime | 4 | missing header, unauthenticated, auto-fill, platform admin |
+| Pagination | 3 | structure, tenant isolation, page size = 15 |
+| ProjectStatus enum | 4 | valid values, invalid → 422, default 'active' |
 
 ```bash
 cd backend

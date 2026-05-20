@@ -253,3 +253,108 @@ test('platform admin does not automatically bypass ProjectPolicy', function (): 
         ->postJson('/projects', ['name' => 'Platform Bypass Attempt'], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+test('project index returns paginated response with meta and links', function (): void {
+    $tenant = Tenant::factory()->create();
+    $user = attachUserToTenant($tenant, 'member');
+
+    for ($i = 1; $i <= 3; $i++) {
+        seedProjectForTenant($tenant, ['name' => "Project {$i}"]);
+    }
+
+    $this->actingAs($user)
+        ->getJson('/projects', ['X-Tenant-Id' => $tenant->id])
+        ->assertOk()
+        ->assertJsonStructure(['data', 'links', 'meta'])
+        ->assertJsonPath('meta.total', 3)
+        ->assertJsonCount(3, 'data');
+});
+
+test('project index pagination respects tenant isolation', function (): void {
+    $tenantA = Tenant::factory()->create();
+    $tenantB = Tenant::factory()->create();
+    $user = attachUserToTenant($tenantA, 'member');
+
+    for ($i = 1; $i <= 5; $i++) {
+        seedProjectForTenant($tenantA, ['name' => "A-{$i}"]);
+        seedProjectForTenant($tenantB, ['name' => "B-{$i}"]);
+    }
+
+    $this->actingAs($user)
+        ->getJson('/projects', ['X-Tenant-Id' => $tenantA->id])
+        ->assertOk()
+        ->assertJsonPath('meta.total', 5); // Only Tenant A's 5 projects
+});
+
+test('project index page size defaults to 15', function (): void {
+    $tenant = Tenant::factory()->create();
+    $user = attachUserToTenant($tenant, 'member');
+
+    for ($i = 1; $i <= 20; $i++) {
+        seedProjectForTenant($tenant, ['name' => "Project {$i}"]);
+    }
+
+    $this->actingAs($user)
+        ->getJson('/projects', ['X-Tenant-Id' => $tenant->id])
+        ->assertOk()
+        ->assertJsonCount(15, 'data')           // First page: 15 items
+        ->assertJsonPath('meta.total', 20)       // Total across all pages
+        ->assertJsonPath('meta.last_page', 2);
+});
+
+// ─── ProjectStatus enum ───────────────────────────────────────────────────────
+
+test('creating a project with a valid status succeeds', function (): void {
+    $tenant = Tenant::factory()->create();
+    $user = attachUserToTenant($tenant, 'owner');
+
+    foreach (['active', 'inactive', 'archived'] as $status) {
+        $this->actingAs($user)
+            ->postJson('/projects', ['name' => "Project ({$status})", 'status' => $status], ['X-Tenant-Id' => $tenant->id])
+            ->assertCreated()
+            ->assertJsonPath('data.status', $status);
+    }
+});
+
+test('creating a project with an invalid status returns 422', function (): void {
+    $tenant = Tenant::factory()->create();
+    $user = attachUserToTenant($tenant, 'owner');
+
+    $this->actingAs($user)
+        ->postJson('/projects', ['name' => 'Bad Status', 'status' => 'pending'], ['X-Tenant-Id' => $tenant->id])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['status']);
+});
+
+test('updating a project status with an invalid value returns 422', function (): void {
+    $tenant = Tenant::factory()->create();
+    $user = attachUserToTenant($tenant, 'owner');
+    $project = seedProjectForTenant($tenant);
+
+    $this->actingAs($user)
+        ->patchJson("/projects/{$project->id}", ['status' => 'deleted'], ['X-Tenant-Id' => $tenant->id])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['status']);
+});
+
+test('project status is returned as a string value in response', function (): void {
+    $tenant = Tenant::factory()->create();
+    $user = attachUserToTenant($tenant, 'owner');
+
+    $this->actingAs($user)
+        ->postJson('/projects', ['name' => 'Status Test', 'status' => 'inactive'], ['X-Tenant-Id' => $tenant->id])
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'inactive'); // enum value, not enum name
+});
+
+test('project status defaults to active when not specified', function (): void {
+    $tenant = Tenant::factory()->create();
+    $user = attachUserToTenant($tenant, 'owner');
+
+    $this->actingAs($user)
+        ->postJson('/projects', ['name' => 'No Status'], ['X-Tenant-Id' => $tenant->id])
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'active');
+});

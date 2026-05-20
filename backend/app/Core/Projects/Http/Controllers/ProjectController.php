@@ -19,7 +19,7 @@ class ProjectController
     {
         Gate::authorize('viewAny', Project::class);
 
-        return ProjectResource::collection(Project::all());
+        return ProjectResource::collection(Project::paginate(15));
     }
 
     public function show(Project $project): ProjectResource
