@@ -5,4 +5,5 @@ return [
     App\Providers\Filament\AdminPanelProvider::class,
     App\Core\IdentityAuth\IdentityAuthServiceProvider::class,
     App\Core\Tenancy\Providers\TenancyServiceProvider::class,
+    App\Core\Projects\Providers\ProjectsServiceProvider::class,
 ];
