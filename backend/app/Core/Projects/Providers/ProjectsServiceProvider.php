@@ -6,15 +6,16 @@ namespace App\Core\Projects\Providers;
 
 use App\Core\Projects\Models\Project;
 use App\Core\Projects\Policies\ProjectPolicy;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\ServiceProvider;
+use App\Core\Shared\Providers\CoreModuleServiceProvider;
 
-class ProjectsServiceProvider extends ServiceProvider
+final class ProjectsServiceProvider extends CoreModuleServiceProvider
 {
-    public function boot(): void
-    {
-        $this->loadRoutesFrom(__DIR__.'/../Routes/api.php');
+    protected array $policies = [
+        Project::class => ProjectPolicy::class,
+    ];
 
-        Gate::policy(Project::class, ProjectPolicy::class);
+    protected function routesPath(): ?string
+    {
+        return __DIR__ . '/../Routes/api.php';
     }
 }

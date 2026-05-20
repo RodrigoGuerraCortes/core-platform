@@ -36,11 +36,11 @@ public function boot(): void
 All routes that access tenant-owned models **must** use `TenantRouteMiddleware::STACK`.
 
 ```php
-use App\Core\Tenancy\Routing\TenantRouteMiddleware;
 use App\Core\Projects\Http\Controllers\ProjectController;
+use App\Core\Tenancy\Routing\TenantRouteRegistrar;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(TenantRouteMiddleware::STACK)->group(function (): void {
+TenantRouteRegistrar::group(function (): void {
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
@@ -49,19 +49,19 @@ Route::middleware(TenantRouteMiddleware::STACK)->group(function (): void {
 });
 ```
 
-### `TenantRouteMiddleware::STACK`
+### `TenantRouteRegistrar::group()`
+
+`TenantRouteRegistrar` is the **primary API** for registering tenant routes. It is a thin, explicit wrapper around `TenantRouteMiddleware::STACK`:
 
 ```php
-// App\Core\Tenancy\Routing\TenantRouteMiddleware
-public const STACK = [
-    'auth:sanctum',
-    'tenant.resolve',
-    SubstituteBindings::class,
-    'tenant.member',
-];
+// App\Core\Tenancy\Routing\TenantRouteRegistrar
+public static function group(Closure $routes): void
+{
+    Route::middleware(TenantRouteMiddleware::STACK)->group($routes);
+}
 ```
 
-This is the canonical constant. Never inline or reorder these manually.
+Do not use `TenantRouteMiddleware::STACK` directly in module route files. The architecture guardrail test `G-R02` enforces this.
 
 **The order is a security invariant.** See [ADR-011](../../adr/ADR-011-tenant-route-model-binding.md) and [Tenant-Safe Route Model Binding](../tenancy/route-model-binding.md) for the full explanation.
 
@@ -184,8 +184,9 @@ public function getRouteKeyName(): string
 | Pattern | Reason |
 |---|---|
 | Routes in `routes/api.php` for module resources | Violates module ownership |
-| Inlining middleware array instead of using `STACK` | Allows ordering mistakes |
-| Route model binding before `tenant.resolve` | Security invariant violation |
+| `Route::middleware(TenantRouteMiddleware::STACK)->group()` in module route files | Use `TenantRouteRegistrar::group()` — enforced by architecture test G-R02 |
+| Inlining a manual middleware array | Allows ordering mistakes; no compile-time check |
+| Route model binding before `tenant.resolve` | Security invariant violation (ADR-011) |
 | Prefixing `/api` inside module route files | `loadRoutesFrom()` has no prefix; adding it manually creates double-prefix risk |
 | `Route::resource()` without explicit name control | Generates unintended routes; use explicit Route declarations |
 

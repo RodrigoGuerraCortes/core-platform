@@ -31,6 +31,32 @@ The provider is the only class that must be registered in `bootstrap/providers.p
 
 ---
 
+## Base Class: `CoreModuleServiceProvider`
+
+All Core (and Domain) module providers extend `CoreModuleServiceProvider`:
+
+```php
+use App\Core\Shared\Providers\CoreModuleServiceProvider;
+
+final class ProjectsServiceProvider extends CoreModuleServiceProvider
+{
+    protected array $policies = [
+        Project::class => ProjectPolicy::class,
+    ];
+
+    protected function routesPath(): ?string
+    {
+        return __DIR__ . '/../Routes/api.php';
+    }
+}
+```
+
+`CoreModuleServiceProvider` handles `loadRoutesFrom()` and `Gate::policy()` registration automatically from the `$policies` map and the `routesPath()` return value. Module providers declare intent — not wiring.
+
+**Exception:** `TenancyServiceProvider` does not extend `CoreModuleServiceProvider` because it is platform infrastructure, not a regular domain module. It manages the container bindings that `CoreModuleServiceProvider` itself depends on.
+
+---
+
 ## Registration in `bootstrap/providers.php`
 
 ```php
@@ -57,28 +83,35 @@ declare(strict_types=1);
 
 namespace App\Core\{Module}\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Core\Shared\Providers\CoreModuleServiceProvider;
 
-final class {Module}ServiceProvider extends ServiceProvider
+// Typical module provider — extends the base class, declares intent only
+final class {Module}ServiceProvider extends CoreModuleServiceProvider
 {
-    /**
-     * Container bindings only.
-     * Never load routes, register policies, or attach listeners here.
-     */
-    public function register(): void
+    protected array $policies = [
+        SomeModel::class => SomePolicy::class,
+    ];
+
+    protected function routesPath(): ?string
     {
-        // container bindings
+        return __DIR__ . '/../Routes/api.php';
     }
 
-    /**
-     * Bootstrap: routes, policies, observers, event listeners.
-     * Never put container bindings here.
-     */
-    public function boot(): void
-    {
-        $this->loadRoutesFrom(__DIR__ . '/../Routes/api.php');
-        Gate::policy(SomeModel::class, SomePolicy::class);
-    }
+    // Override boot() only when adding observers or event listeners:
+    // public function boot(): void
+    // {
+    //     parent::boot();  // MUST call parent
+    //     SomeModel::observe(SomeObserver::class);
+    // }
+}
+```
+
+For modules with container bindings (request-scoped services, singletons), add a `register()` method:
+
+```php
+public function register(): void
+{
+    $this->app->scoped(SomeService::class);
 }
 ```
 

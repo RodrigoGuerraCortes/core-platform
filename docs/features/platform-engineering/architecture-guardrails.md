@@ -91,19 +91,21 @@ Each guardrail records: the rule, the reason, the risk of violation, and how it 
 
 ---
 
-### G-R02 — `TenantRouteMiddleware::STACK` is the only valid middleware stack for tenant routes
+### G-R02 — `TenantRouteRegistrar::group()` is the only valid registration method for tenant routes
 
-**Rule:** Never construct an inline middleware array for tenant-owned routes. Always use the constant:
+**Rule:** Never construct an inline middleware array for tenant-owned routes. Use `TenantRouteRegistrar::group()` — not `Route::middleware(TenantRouteMiddleware::STACK)->group()`:
 
 ```php
-use App\Core\Tenancy\Routing\TenantRouteMiddleware;
+use App\Core\Tenancy\Routing\TenantRouteRegistrar;
 
-Route::middleware(TenantRouteMiddleware::STACK)->group(function (): void {
+TenantRouteRegistrar::group(function (): void {
     // ...
 });
 ```
 
-**Risk of violation:** Manual arrays allow ordering mistakes (G-R01 violation) or missing middleware (auth bypass, membership bypass).
+**Risk of violation:** Manual array construction allows ordering mistakes that violate G-R01, or omission of required middleware.
+
+**Enforced by:** Architecture test `G-R02` in `tests/Feature/Architecture/ArchitectureGuardrailsTest.php`.
 
 ---
 
@@ -133,9 +135,17 @@ Route::middleware(TenantRouteMiddleware::STACK)->group(function (): void {
 
 ### G-A02 — Every tenant-owned model must have a registered policy
 
-**Rule:** Every model that uses `BelongsToTenant` must have a corresponding `{Model}Policy` registered via `Gate::policy()` in the module provider's `boot()`.
+**Rule:** Every model that uses `BelongsToTenant` must have a corresponding `{Model}Policy` registered via `Gate::policy()` in the module provider.
 
-**Risk of violation:** Without a registered policy, `$this->authorize('create', Project::class)` defaults to denying all (which is safe) but the behavior is undefined across Laravel versions. Explicit policies are required.
+**How:** Declare the policy in the `$policies` array of `CoreModuleServiceProvider`. Registration is automatic:
+
+```php
+protected array $policies = [
+    Project::class => ProjectPolicy::class,
+];
+```
+
+**Risk of violation:** Without a registered policy, `$this->authorize('create', Project::class)` defaults to denying all (which is safe) but the behavior is undefined across Laravel versions.
 
 ---
 
@@ -206,11 +216,11 @@ Route::middleware(TenantRouteMiddleware::STACK)->group(function (): void {
 |---|---|---|
 | G-T01 | `BelongsToTenant` on tenant models | Cross-tenant data access |
 | G-T02 | No `tenant_id` from user input | Tenant spoofing |
-| G-T03 | No `withoutGlobalScopes()` | Unscoped cross-tenant queries |
+| G-T03 | No `->withoutGlobalScopes()` call | Unscoped cross-tenant queries |
 | G-T04 | No persistent active tenant | Tenant identity persistence attack |
 | G-T05 | `TenantContextContract` is the only tenant source | Bypassed tenant context |
 | G-R01 | `tenant.resolve` before `SubstituteBindings` | Cross-tenant model binding (security defect) |
-| G-R02 | Always use `TenantRouteMiddleware::STACK` | Middleware ordering mistakes |
+| G-R02 | Use `TenantRouteRegistrar::group()` | Middleware ordering mistakes |
 | G-R03 | Provider routes don't inherit `api` group | Silent binding failures |
 | G-A01 | Platform admin no bypass | Cross-tenant admin access |
 | G-A02 | Every model has a registered policy | Undefined authorization behavior |

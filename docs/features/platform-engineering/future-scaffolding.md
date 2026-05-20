@@ -119,16 +119,27 @@ Generates a queued job with `HasTenantContext` pre-applied.
 
 ---
 
-## Static Analysis Rules (PHPStan)
+## Architecture Tests (implemented — Block 6.1)
 
-Future PHPStan custom rules to enforce guardrails at CI level:
+Runtime guardrail tests that inspect file contents. Located in `tests/Feature/Architecture/ArchitectureGuardrailsTest.php`.
+
+| Test | Guardrail | Status |
+|---|---|---|
+| No `->withoutGlobalScopes()` in app code | G-T03 | ✅ Implemented |
+| No `tenant_id` in Form Request rules | G-T02 | ✅ Implemented |
+| No controller reads `X-Tenant-Id` directly | G-T05 | ✅ Implemented |
+| Module route files use `TenantRouteRegistrar::group()` | G-R02 | ✅ Implemented |
+| `TenantRouteRegistrar` is a wrapper around `STACK` | G-R02 (structural) | ✅ Implemented |
+| No policy grants access from `is_platform_admin` alone | G-A01 | ✅ Implemented |
+
+## Static Analysis Rules (PHPStan — planned)
+
+Future PHPStan custom rules for compile-time enforcement:
 
 | Rule | Guards Against |
 |---|---|
-| `NoWithoutGlobalScopesRule` | Detects calls to `withoutGlobalScopes()` (plural) anywhere in `app/` |
-| `TenantIdInRequestRule` | Detects `tenant_id` as a key in any Form Request `rules()` return array |
+| `NoWithoutGlobalScopesRule` | Detects `->withoutGlobalScopes()` call (complements the runtime test) |
 | `SubstituteBindingsOrderRule` | Detects route middleware arrays where `SubstituteBindings` precedes `tenant.resolve` |
-| `NoPlatformAdminBypassRule` | Detects `is_platform_admin` checks inside Policy classes |
 | `NoDirectDomainCouplingRule` | Detects `use App\Domain\{A}\...` in `App\Domain\{B}\...` (cross-domain import) |
 | `TenantOwnedModelHasPolicyRule` | Warns when a model using `BelongsToTenant` has no registered policy |
 
