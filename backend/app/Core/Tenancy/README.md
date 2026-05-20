@@ -26,6 +26,14 @@ Core/Tenancy/
 │       └── BelongsToTenant.php  # Trait for tenant-owned domain models
 ├── Scopes/               # TenantScope — global Eloquent isolation scope
 ├── Exceptions/           # TenantNotFoundException, TenantContextNotResolvedException
+├── Jobs/
+│   ├── Concerns/
+│   │   └── HasTenantContext.php    # Trait for tenant-aware queued jobs
+│   └── Middleware/
+│       └── RestoreTenantContext.php # Job middleware — restores context in workers
+├── Support/
+│   ├── TenantCache.php   # Tenant-isolated cache key helper
+│   └── TenantLogger.php  # Tenant log context provider
 ├── Providers/            # TenancyServiceProvider
 └── README.md
 ```
@@ -111,22 +119,114 @@ Rules:
 
 ---
 
-## ⚠️ Async Warning
+## Block 3 — Async & Operational Infrastructure
 
-`TenantContext` and `TenantScope` are **request-scoped**. Queue workers and console commands do NOT automatically inherit tenant context.
+### Queue Tenant Propagation
 
-Never dispatch a queued job that queries tenant-owned models without explicitly serializing the tenant ID into the job and re-initializing the context in `handle()`.
+Use `HasTenantContext` on any queued job that needs tenant isolation:
 
-This will be addressed in Block 3 — Queue Propagation.
+```php
+class ProcessTenantReport implements ShouldQueue
+{
+    use HasTenantContext;
+
+    public function __construct()
+    {
+        $this->captureTenantContext(); // Serializes tenant_id at dispatch time
+    }
+
+    public function handle(): void
+    {
+        // TenantContextContract is restored by RestoreTenantContext middleware
+        $tenantId = app(TenantContextContract::class)->tenantId();
+    }
+}
+```
+
+**Lifecycle guarantee:**
+
+| Stage | Context state |
+|---|---|
+| `dispatch()` called in HTTP request | `captureTenantContext()` serializes `tenant_id` |
+| Job picked up by worker | `RestoreTenantContext` fetches Tenant by ID, calls `setTenant()` |
+| `handle()` runs | `TenantContextContract` is resolved |
+| After `handle()` (success or failure) | `context->clear()` called in `finally` — worker is clean |
+
+**Worker safety:** The `finally` block in `RestoreTenantContext` always clears context after each job — even on exceptions. This prevents stale context from leaking into the next job processed by the same worker.
+
+**If a job needs additional middleware:**
+
+```php
+public function middleware(): array
+{
+    return [...$this->tenantContextMiddleware(), new RateLimited('reports')];
+}
+```
+
+**Failure when tenant deleted:** If the tenant is soft-deleted after the job was dispatched, `RestoreTenantContext` throws a `RuntimeException` — the job fails explicitly rather than running with a stale or null context.
 
 ---
 
-## Block 3 TODOs
+### Tenant-Aware Cache
 
-- Queue tenant propagation (serialize tenant ID into jobs, re-initialize context in workers)
-- Cache key isolation helpers (`tenant-{id}:cache-key` prefix strategy)
-- Logging enrichment (add tenant ID to log context automatically)
-- RBAC — role-based access within tenant using `membership_role`
+Use `TenantCache` for any cache value that should be isolated per tenant:
+
+```php
+$cache = app(TenantCache::class);
+
+$cache->put('settings', $data, now()->addHour()); // → tenant:{id}:settings
+$cache->get('settings');
+$cache->forget('settings');
+$cache->remember('report', 3600, fn () => buildReport());
+```
+
+Key format: `tenant:{tenantId}:{key}`
+
+Throws `TenantContextNotResolvedException` when no context is resolved.
+
+For **global (platform-wide) cache**, use the `Cache` facade directly — no prefix:
+
+```php
+Cache::put('platform:config', $data); // Global, not tenant-scoped
+```
+
+---
+
+### Logging Enrichment
+
+`TenantLogger` provides tenant metadata for structured log enrichment:
+
+```php
+// Automatic in HTTP context: ResolveTenant middleware calls this after resolution.
+Log::withContext(app(TenantLogger::class)->context());
+// → adds tenant_id and tenant_slug to all subsequent log entries in the request
+
+// In queue workers: call manually at the start of handle()
+public function handle(): void
+{
+    Log::withContext(app(TenantLogger::class)->context());
+    // ... job logic
+}
+```
+
+Returns `[]` when no context is resolved (safe for platform-level code — never throws).
+
+---
+
+## ⚠️ Async Warning
+
+`TenantContext` is **request-scoped**. Queue workers and console commands start with an empty context. The `HasTenantContext` + `RestoreTenantContext` pair is the ONLY sanctioned mechanism to propagate tenant context into async execution.
+
+Never rely on session, auth state, or global variables for tenant propagation in workers.
+
+---
+
+## Block 4 TODOs
+
+- RBAC — role-based access within tenant using `membership_role` from `tenant_user`
+- Tenant-scoped Sanctum token policies (optional, not auth-coupled)
+- Scheduled command tenant propagation (console kernel tenant isolation)
+- Multi-tenant audit logging (tenant-scoped event trail)
 
 - Queue tenant propagation
 - Cache key isolation helpers

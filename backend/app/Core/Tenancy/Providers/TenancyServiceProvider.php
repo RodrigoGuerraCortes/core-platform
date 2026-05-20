@@ -8,6 +8,8 @@ use App\Core\Tenancy\Context\TenantContext;
 use App\Core\Tenancy\Contracts\TenantContextContract;
 use App\Core\Tenancy\Middleware\ResolveTenant;
 use App\Core\Tenancy\Middleware\ValidateTenantMembership;
+use App\Core\Tenancy\Support\TenantCache;
+use App\Core\Tenancy\Support\TenantLogger;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,17 +21,22 @@ class TenancyServiceProvider extends ServiceProvider
         // lifecycle. In Octane (Swoole/RoadRunner), scoped bindings are automatically
         // flushed between requests.
         //
-        // ⚠️  ASYNC WARNING — This binding is request-scoped. Queue workers and
-        // scheduled commands do NOT receive this context automatically. Any queued
-        // job that needs tenant context must serialize the tenant ID explicitly
-        // and re-initialize TenantContext inside its handle() method.
-        // This will be addressed in Block 2 queue propagation.
+        // ⚠️  ASYNC WARNING — This binding is request-scoped. Queue workers do NOT
+        // receive this context automatically. Use HasTenantContext trait on queued jobs
+        // to serialize the tenant ID at dispatch time and RestoreTenantContext job
+        // middleware to restore it at execution time. See Jobs/Concerns/HasTenantContext.
         $this->app->scoped(TenantContextContract::class, fn (): TenantContext => new TenantContext());
 
         // Alias the concrete class so both TenantContextContract and TenantContext
         // resolve to the same scoped instance. Middleware that type-hints TenantContext
         // directly (e.g. via DI) continues to receive the correct scoped instance.
         $this->app->alias(TenantContextContract::class, TenantContext::class);
+
+        // TenantCache and TenantLogger hold a reference to the shared TenantContextContract
+        // instance. Because TenantContextContract is mutated in place (setTenant/clear),
+        // singleton bindings here correctly reflect live context state throughout the request.
+        $this->app->singleton(TenantCache::class);
+        $this->app->singleton(TenantLogger::class);
     }
 
     public function boot(): void

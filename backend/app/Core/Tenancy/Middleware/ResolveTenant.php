@@ -6,8 +6,10 @@ namespace App\Core\Tenancy\Middleware;
 
 use App\Core\Tenancy\Contracts\TenantContextContract;
 use App\Core\Tenancy\Models\Tenant;
+use App\Core\Tenancy\Support\TenantLogger;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -30,7 +32,10 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ResolveTenant
 {
-    public function __construct(private readonly TenantContextContract $context) {}
+    public function __construct(
+        private readonly TenantContextContract $context,
+        private readonly TenantLogger $logger,
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -47,6 +52,10 @@ class ResolveTenant
         }
 
         $this->context->setTenant($tenant);
+
+        // Enrich all subsequent log entries for this request with tenant metadata.
+        // This enriches the shared log context for the duration of the request only.
+        Log::withContext($this->logger->context());
 
         return $next($request);
     }
