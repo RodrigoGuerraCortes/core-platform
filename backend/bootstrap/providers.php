@@ -6,4 +6,5 @@ return [
     App\Core\IdentityAuth\IdentityAuthServiceProvider::class,
     App\Core\Tenancy\Providers\TenancyServiceProvider::class,
     App\Core\Projects\Providers\ProjectsServiceProvider::class,
+    App\Core\DynamicForms\Providers\DynamicFormsServiceProvider::class,
 ];
