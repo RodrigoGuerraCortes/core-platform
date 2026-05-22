@@ -1,0 +1,9 @@
+# modules placeholder
+#
+# Each feature module lives in its own subdirectory:
+#   src/modules/{module-name}/
+#     api.ts          — axios calls wrapping the shared client
+#     composables/    — TanStack Query hooks (useXxx)
+#     pages/          — route-level components
+#     components/     — module-local presentational components
+#     types.ts        — module-specific TypeScript types
