@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { dynamicFormsRoutes } from '@/modules/dynamic-forms/routes'
 
 /**
  * Route records are registered here at the top level.
@@ -16,9 +17,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/TenantLayout.vue'),
     meta: { requiresAuth: true, requiresTenant: true },
     children: [
-      // Module routes are added here as modules are built.
-      // Example (DynamicForms will register its own children):
-      // { path: 'forms', component: () => import('@/modules/dynamic-forms/pages/FormListPage.vue') },
+      ...dynamicFormsRoutes,
+      // Additional module routes are added here as modules are built.
     ],
   },
 
