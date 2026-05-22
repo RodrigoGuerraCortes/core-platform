@@ -8,6 +8,12 @@ import type { RouteRecordRaw } from 'vue-router'
  */
 export const dynamicFormsRoutes: RouteRecordRaw[] = [
   {
+    path: 'forms',
+    name: 'forms.index',
+    component: () => import('../pages/FormsIndexPage.vue'),
+    meta: { requiresAuth: true, requiresTenant: true },
+  },
+  {
     path: 'forms/:formId/fill',
     name: 'dynamic-forms.fill',
     component: () => import('../pages/FormFillPage.vue'),

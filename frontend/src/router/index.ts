@@ -17,6 +17,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/TenantLayout.vue'),
     meta: { requiresAuth: true, requiresTenant: true },
     children: [
+      {
+        path: 'dashboard',
+        name: 'dashboard',
+        component: () => import('@/app/pages/DashboardPage.vue'),
+        meta: { requiresAuth: true, requiresTenant: true },
+      },
       ...dynamicFormsRoutes,
       // Additional module routes are added here as modules are built.
     ],
