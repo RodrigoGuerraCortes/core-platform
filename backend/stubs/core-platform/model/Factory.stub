@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Factories;
+
+use App\Core\{{ Module }}\Models\{{ Model }};
+use App\Core\Tenancy\Models\Tenant;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<{{ Model }}>
+ *
+ * IMPORTANT — Tenant context:
+ *   BelongsToTenant auto-fills tenant_id from TenantContextContract at create time.
+ *   In tests that run without an active request, set tenant_id explicitly:
+ *
+ *     {{ Model }}::factory()->create(['tenant_id' => $tenant->id])
+ *
+ *   Or use the forTenant() helper state below.
+ */
+class {{ Model }}Factory extends Factory
+{
+    protected $model = {{ Model }}::class;
+
+    public function definition(): array
+    {
+        return [
+            'name' => $this->faker->words(3, true),
+        ];
+    }
+
+    /**
+     * Set the owning tenant explicitly (for test setup without an active request).
+     */
+    public function forTenant(Tenant $tenant): static
+    {
+        return $this->state(['tenant_id' => $tenant->id]);
+    }
+}

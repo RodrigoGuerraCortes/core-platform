@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \
     git \
-    && docker-php-ext-install pdo pdo_pgsql zip
+    libicu-dev \
+    && docker-php-ext-install intl pdo pdo_pgsql zip
 
 RUN mkdir -p /tmp && chmod 777 /tmp
 

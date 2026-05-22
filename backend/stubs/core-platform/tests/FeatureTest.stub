@@ -1,0 +1,73 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Core\{{ Module }}\Models\{{ Model }};
+use App\Core\Tenancy\Contracts\TenantContextContract;
+use App\Core\Tenancy\Models\Tenant;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+afterEach(function (): void {
+    app(TenantContextContract::class)->clear();
+});
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function attachUserTo{{ Module }}Tenant(Tenant $tenant, string $role = 'member'): User
+{
+    $user = User::factory()->create();
+    $tenant->users()->attach($user, ['membership_role' => $role]);
+
+    return $user;
+}
+
+function seed{{ Model }}ForTenant(Tenant $tenant, array $attrs = []): {{ Model }}
+{
+    return {{ Model }}::create(array_merge([
+        'tenant_id' => $tenant->id,
+        'name'      => 'Seeded {{ Model }}',
+    ], $attrs));
+}
+
+// ─── Tenant isolation ────────────────────────────────────────────────────────
+
+test('Tenant A cannot retrieve Tenant B {{ modelVar }}', function (): void {
+    $tenantA = Tenant::factory()->create();
+    $tenantB = Tenant::factory()->create();
+    $user    = attachUserTo{{ Module }}Tenant($tenantA, 'member');
+
+    $b{{ Model }} = seed{{ Model }}ForTenant($tenantB);
+
+    $this->actingAs($user)
+        ->getJson("/{{ resource }}/{$b{{ Model }}->id}", ['X-Tenant-Id' => $tenantA->id])
+        ->assertNotFound();
+});
+
+test('Tenant A cannot update Tenant B {{ modelVar }}', function (): void {
+    $tenantA = Tenant::factory()->create();
+    $tenantB = Tenant::factory()->create();
+    $user    = attachUserTo{{ Module }}Tenant($tenantA, 'admin');
+
+    $b{{ Model }} = seed{{ Model }}ForTenant($tenantB);
+
+    $this->actingAs($user)
+        ->patchJson("/{{ resource }}/{$b{{ Model }}->id}", ['name' => 'Injected'], ['X-Tenant-Id' => $tenantA->id])
+        ->assertNotFound();
+});
+
+test('Tenant A cannot delete Tenant B {{ modelVar }}', function (): void {
+    $tenantA = Tenant::factory()->create();
+    $tenantB = Tenant::factory()->create();
+    $user    = attachUserTo{{ Module }}Tenant($tenantA, 'admin');
+
+    $b{{ Model }} = seed{{ Model }}ForTenant($tenantB);
+
+    $this->actingAs($user)
+        ->deleteJson("/{{ resource }}/{$b{{ Model }}->id}", headers: ['X-Tenant-Id' => $tenantA->id])
+        ->assertNotFound();
+});
+
+// ─── Add feature-specific tests below ────────────────────────────────────────

@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core\{{ Module }}\Policies;
+
+use App\Core\{{ Module }}\Models\{{ Model }};
+use App\Core\Tenancy\Contracts\TenantContextContract;
+use App\Core\Tenancy\Support\MembershipResolver;
+use App\Models\User;
+
+/**
+ * Authorization policy for {{ Model }} resources.
+ *
+ * Role matrix (extend as needed):
+ *   owner / admin → viewAny, view, create, update, delete
+ *   member        → viewAny, view
+ *   non-member    → blocked by tenant.member middleware before policy fires
+ *
+ * Platform admin status does NOT grant write access automatically.
+ *
+ * @see docs/features/platform-engineering/service-provider-conventions.md
+ */
+class {{ Model }}Policy
+{
+    public function __construct(
+        private readonly TenantContextContract $context,
+        private readonly MembershipResolver $resolver,
+    ) {}
+
+    public function viewAny(User $user): bool
+    {
+        return $this->membershipRole($user) !== null;
+    }
+
+    public function view(User $user, {{ Model }} ${{ modelVar }}): bool
+    {
+        return $this->membershipRole($user) !== null;
+    }
+
+    public function create(User $user): bool
+    {
+        return $this->isOwnerOrAdmin($user);
+    }
+
+    public function update(User $user, {{ Model }} ${{ modelVar }}): bool
+    {
+        return $this->isOwnerOrAdmin($user);
+    }
+
+    public function delete(User $user, {{ Model }} ${{ modelVar }}): bool
+    {
+        return $this->isOwnerOrAdmin($user);
+    }
+
+    private function membershipRole(User $user): ?string
+    {
+        $tenant = $this->context->tenant();
+
+        if ($tenant === null) {
+            return null;
+        }
+
+        return $this->resolver->role($user, $tenant);
+    }
+
+    private function isOwnerOrAdmin(User $user): bool
+    {
+        return in_array($this->membershipRole($user), ['owner', 'admin'], strict: true);
+    }
+}

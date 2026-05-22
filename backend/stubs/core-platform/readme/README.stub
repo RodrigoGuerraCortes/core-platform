@@ -1,0 +1,68 @@
+# Core/{{ Module }} Module
+
+## Purpose
+
+`Core/{{ Module }}` is a tenant-owned module in the Core Platform.
+
+---
+
+## Tenant Ownership
+
+Every `{{ Model }}` belongs to exactly one `Tenant` via `tenant_id`.
+
+The `BelongsToTenant` trait:
+1. Registers `TenantScope` — all SELECT queries scoped to the resolved tenant
+2. Auto-fills `tenant_id` from `TenantContextContract` on creation
+3. Exposes a `tenant()` BelongsTo relationship
+
+Cross-tenant access via route model binding returns **404** — existence is never revealed.
+
+---
+
+## Authorization Model
+
+See `{{ Model }}Policy` for the full role matrix.
+
+| Role          | viewAny | view | create | update | delete |
+|---------------|---------|------|--------|--------|--------|
+| owner / admin | ✓       | ✓    | ✓      | ✓      | ✓      |
+| member        | ✓       | ✓    | ✗      | ✗      | ✗      |
+
+---
+
+## Structure
+
+```
+Core/{{ Module }}/
+├── Http/            # Controllers, Requests, Resources (add as needed)
+├── Models/          # {{ Model }}.php — uses BelongsToTenant + SoftDeletes
+├── Policies/        # {{ Model }}Policy.php
+├── Providers/       # {{ Module }}ServiceProvider — single module entry point
+├── Routes/          # api.php — tenant-safe routes via TenantRouteRegistrar
+└── README.md
+```
+
+---
+
+## Service Provider
+
+`{{ Module }}ServiceProvider` extends `CoreModuleServiceProvider`.
+It is registered in `bootstrap/providers.php`.
+
+---
+
+## Routes
+
+Routes use `TenantRouteRegistrar::group()` which enforces the security-critical middleware order (ADR-011):
+
+```
+auth:sanctum → tenant.resolve → SubstituteBindings → tenant.member
+```
+
+---
+
+## References
+
+- [ADR-011 — Tenant-Safe Route Model Binding](../../../docs/adr/ADR-011-tenant-route-model-binding.md)
+- [Service Provider Conventions](../../../docs/features/platform-engineering/service-provider-conventions.md)
+- [Route Conventions](../../../docs/features/platform-engineering/route-conventions.md)

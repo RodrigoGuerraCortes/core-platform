@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Core\{{ Module }}\Models\{{ Model }};
+use App\Core\Tenancy\Models\Concerns\BelongsToTenant;
+
+// ─── Module architecture ──────────────────────────────────────────────────────
+
+test('{{ Module }}ServiceProvider is registered in bootstrap/providers', function (): void {
+    $providers = require base_path('bootstrap/providers.php');
+
+    expect($providers)->toContain(\App\Core\{{ Module }}\Providers\{{ Module }}ServiceProvider::class);
+});
+
+test('{{ Model }} uses BelongsToTenant', function (): void {
+    expect(in_array(BelongsToTenant::class, class_uses_recursive({{ Model }}::class), strict: true))->toBeTrue();
+});
+
+test('{{ Model }} uses SoftDeletes', function (): void {
+    expect(in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive({{ Model }}::class), strict: true))->toBeTrue();
+});
