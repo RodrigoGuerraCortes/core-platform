@@ -47,11 +47,14 @@ if [ -z "$(docker compose exec -T app php artisan key:generate --show 2>/dev/nul
     log "Application key generated"
 fi
 
-# ---- 3. Frontend setup (host-side) ----
+# ---- 3. Frontend setup ----
 log "Setting up frontend..."
+# Install on the host so editors, TypeScript, and test runners work without Docker.
 cd frontend
 npm install
 cd ..
+# The frontend container starts automatically via docker compose (see step 2 above).
+# Its own npm install runs during `docker compose build` inside the container.
 
 # ---- 4. Migrations & seeders (inside container) ----
 docker compose exec -T app php artisan migrate --force
@@ -73,6 +76,6 @@ docker compose exec -T app ./vendor/bin/phpstan analyse --level=1 app 2>/dev/nul
 # ---- 7. Summary ----
 log "============================================"
 log "  Core Platform bootstrap complete!"
-log "  Backend : http://localhost:8000"
-log "  Frontend: http://localhost:5173"
+log "  Backend API : http://localhost:8010"
+log "  Frontend    : http://localhost:5173"
 log "============================================"

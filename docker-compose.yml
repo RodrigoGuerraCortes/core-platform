@@ -29,6 +29,28 @@ services:
       - core-network
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: core-platform-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Isolated node_modules inside the container — prevents the host
+      # directory from shadowing the container-installed packages.
+      - /app/node_modules
+    environment:
+      # Vite proxy target — routes /api calls to nginx inside Docker.
+      # Override on the host (outside Docker) via shell env if needed.
+      - BACKEND_URL=http://nginx:80
+    depends_on:
+      - nginx
+    networks:
+      - core-network
+    restart: unless-stopped
+
   postgres:
     image: postgres:16-alpine
     container_name: core-platform-postgres

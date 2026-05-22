@@ -18,10 +18,11 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // firstOrCreate makes the seeder idempotent — safe to re-run via setup.sh.
+        User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            ['name' => 'Test User', 'password' => bcrypt('password')],
+        );
 
         if (! App::environment('production')) {
             $this->call(AdminUserSeeder::class);

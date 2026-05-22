@@ -9,9 +9,10 @@ FROM php:8.3-fpm
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
+    libicu-dev \
     unzip \
     git \
-    && docker-php-ext-install pdo pdo_pgsql zip
+    && docker-php-ext-install pdo pdo_pgsql zip intl
 
 RUN mkdir -p /tmp && chmod 777 /tmp
 
