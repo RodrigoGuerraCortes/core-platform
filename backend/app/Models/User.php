@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Tenancy\Models\Tenant;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -9,6 +10,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -51,5 +53,12 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->is_platform_admin === true;
+    }
+
+    public function tenants(): BelongsToMany
+    {
+        return $this->belongsToMany(Tenant::class, 'tenant_user')
+            ->withPivot('membership_role')
+            ->withTimestamps();
     }
 }

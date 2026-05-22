@@ -26,11 +26,11 @@ docker compose build
 docker compose up -d
 
 # Wait for PostgreSQL
-log "Waiting for PostgreSQL..."
-until docker compose exec -T postgres pg_isready -U app 2>/dev/null; do
-    sleep 2
-done
-log "PostgreSQL is ready."
+#log "Waiting for PostgreSQL..."
+#until docker compose exec -T core-platform-postgres pg_isready -U app 2>/dev/null; do
+#    sleep 2
+#done
+#log "PostgreSQL is ready."
 
 # Copy .env if missing (on host, but we'll copy into container later)
 if [ ! -f backend/.env ]; then
@@ -48,10 +48,10 @@ if [ -z "$(docker compose exec -T app php artisan key:generate --show 2>/dev/nul
 fi
 
 # ---- 3. Frontend setup (host-side) ----
-log "Setting up frontend..."
-cd frontend
-npm install
-cd ..
+#log "Setting up frontend..."
+#cd frontend
+#npm install
+#cd ..
 
 # ---- 4. Migrations & seeders (inside container) ----
 docker compose exec -T app php artisan migrate --force

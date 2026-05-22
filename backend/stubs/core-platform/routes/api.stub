@@ -1,0 +1,17 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Core\Tenancy\Routing\TenantRouteRegistrar;
+use Illuminate\Support\Facades\Route;
+
+// Tenant-safe route group — middleware order enforced by TenantRouteRegistrar (ADR-011).
+// Stack: auth:sanctum → tenant.resolve → SubstituteBindings → tenant.member
+//
+// Add controllers here as the module grows. Do NOT register routes in routes/api.php.
+//
+// @see docs/features/platform-engineering/route-conventions.md
+
+TenantRouteRegistrar::group(function (): void {
+    // Route::get('/{{ resource }}', [{{ Module }}Controller::class, 'index'])->name('{{ resource }}.index');
+});

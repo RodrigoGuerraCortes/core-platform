@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core\{{ Module }}\Models;
+
+use App\Core\Tenancy\Models\Concerns\BelongsToTenant;
+use Database\Factories\{{ Model }}Factory;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+/**
+ * {{ Model }} — tenant-owned domain model.
+ *
+ * BelongsToTenant:
+ *   - Registers TenantScope (all queries auto-scoped to the resolved tenant)
+ *   - Auto-fills tenant_id from TenantContextContract on creation
+ *   - Exposes tenant() BelongsTo relationship
+ *
+ * SoftDeletes: records are never physically deleted.
+ *
+ * @see docs/features/tenancy/overview.md
+ */
+class {{ Model }} extends Model
+{
+    /** @use HasFactory<{{ Model }}Factory> */
+    use BelongsToTenant, HasFactory, SoftDeletes;
+
+    protected static function newFactory(): Factory
+    {
+        return {{ Model }}Factory::new();
+    }
+
+    protected $fillable = [
+        'tenant_id',
+        'name',
+    ];
+
+    protected function casts(): array
+    {
+        return [];
+    }
+}
