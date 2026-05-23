@@ -65,7 +65,7 @@ test('session-authenticated user can access GET /auth/me', function (): void {
         'password' => 'password123',
     ])->assertStatus(200);
 
-    $response = $this->actingAs($user, 'web')->getJson('/auth/me');
+    $response = $this->actingAs($user, 'web')->getJson('/api/auth/me');
 
     $response->assertStatus(200);
 
@@ -92,7 +92,7 @@ test('logout invalidates session', function (): void {
         ->assertStatus(200)
         ->assertJson(['message' => 'Logged out successfully.']);
 
-    $this->getJson('/auth/me')->assertStatus(401);
+    $this->getJson('/api/auth/me')->assertStatus(401);
 });
 
 test('logout does not revoke Sanctum tokens', function (): void {
@@ -112,7 +112,7 @@ test('logout does not revoke Sanctum tokens', function (): void {
 
     $response = $this->withHeaders([
         'Authorization' => 'Bearer '.$token,
-    ])->getJson('/auth/me');
+    ])->getJson('/api/auth/me');
 
     $response->assertStatus(200);
 });

@@ -54,7 +54,7 @@ test('Tenant A sees only their own projects', function (): void {
     seedProjectForTenant($tenantB, ['name' => 'Beta Project']);
 
     $this->actingAs($user)
-        ->getJson('/projects', ['X-Tenant-Id' => $tenantA->id])
+        ->getJson('/api/projects', ['X-Tenant-Id' => $tenantA->id])
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.name', 'Alpha Project');
@@ -70,7 +70,7 @@ test('Tenant A cannot retrieve Tenant B project', function (): void {
     // Route model binding resolves {project} with TenantScope active (tenant_id = A).
     // Since the project belongs to B, it returns null → 404. Existence is not revealed.
     $this->actingAs($user)
-        ->getJson("/projects/{$bProject->id}", ['X-Tenant-Id' => $tenantA->id])
+        ->getJson("/api/projects/{$bProject->id}", ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
 });
 
@@ -82,7 +82,7 @@ test('Tenant A cannot update Tenant B project', function (): void {
     $bProject = seedProjectForTenant($tenantB);
 
     $this->actingAs($user)
-        ->patchJson("/projects/{$bProject->id}", ['name' => 'Hijacked'], ['X-Tenant-Id' => $tenantA->id])
+        ->patchJson("/api/projects/{$bProject->id}", ['name' => 'Hijacked'], ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
 });
 
@@ -94,7 +94,7 @@ test('Tenant A cannot delete Tenant B project', function (): void {
     $bProject = seedProjectForTenant($tenantB);
 
     $this->actingAs($user)
-        ->deleteJson("/projects/{$bProject->id}", [], ['X-Tenant-Id' => $tenantA->id])
+        ->deleteJson("/api/projects/{$bProject->id}", [], ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
 });
 
@@ -105,7 +105,7 @@ test('owner can create a project', function (): void {
     $user = attachUserToTenant($tenant, 'owner');
 
     $this->actingAs($user)
-        ->postJson('/projects', ['name' => 'Owner Project'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/projects', ['name' => 'Owner Project'], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
         ->assertJsonPath('data.name', 'Owner Project');
 });
@@ -116,7 +116,7 @@ test('owner can update a project', function (): void {
     $project = seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->patchJson("/projects/{$project->id}", ['name' => 'Updated by Owner'], ['X-Tenant-Id' => $tenant->id])
+        ->patchJson("/api/projects/{$project->id}", ['name' => 'Updated by Owner'], ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonPath('data.name', 'Updated by Owner');
 });
@@ -127,7 +127,7 @@ test('owner can delete a project', function (): void {
     $project = seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->deleteJson("/projects/{$project->id}", [], ['X-Tenant-Id' => $tenant->id])
+        ->deleteJson("/api/projects/{$project->id}", [], ['X-Tenant-Id' => $tenant->id])
         ->assertNoContent();
 });
 
@@ -138,7 +138,7 @@ test('admin can create a project', function (): void {
     $user = attachUserToTenant($tenant, 'admin');
 
     $this->actingAs($user)
-        ->postJson('/projects', ['name' => 'Admin Project'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/projects', ['name' => 'Admin Project'], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated();
 });
 
@@ -148,7 +148,7 @@ test('admin can update a project', function (): void {
     $project = seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->patchJson("/projects/{$project->id}", ['name' => 'Updated by Admin'], ['X-Tenant-Id' => $tenant->id])
+        ->patchJson("/api/projects/{$project->id}", ['name' => 'Updated by Admin'], ['X-Tenant-Id' => $tenant->id])
         ->assertOk();
 });
 
@@ -158,7 +158,7 @@ test('admin can delete a project', function (): void {
     $project = seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->deleteJson("/projects/{$project->id}", [], ['X-Tenant-Id' => $tenant->id])
+        ->deleteJson("/api/projects/{$project->id}", [], ['X-Tenant-Id' => $tenant->id])
         ->assertNoContent();
 });
 
@@ -170,7 +170,7 @@ test('member can list projects', function (): void {
     seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->getJson('/projects', ['X-Tenant-Id' => $tenant->id])
+        ->getJson('/api/projects', ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonCount(1, 'data');
 });
@@ -181,7 +181,7 @@ test('member can view a project', function (): void {
     $project = seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->getJson("/projects/{$project->id}", ['X-Tenant-Id' => $tenant->id])
+        ->getJson("/api/projects/{$project->id}", ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonPath('data.id', $project->id);
 });
@@ -191,7 +191,7 @@ test('member cannot create a project', function (): void {
     $user = attachUserToTenant($tenant, 'member');
 
     $this->actingAs($user)
-        ->postJson('/projects', ['name' => 'Forbidden'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/projects', ['name' => 'Forbidden'], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -201,7 +201,7 @@ test('member cannot update a project', function (): void {
     $project = seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->patchJson("/projects/{$project->id}", ['name' => 'Forbidden'], ['X-Tenant-Id' => $tenant->id])
+        ->patchJson("/api/projects/{$project->id}", ['name' => 'Forbidden'], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -211,7 +211,7 @@ test('member cannot delete a project', function (): void {
     $project = seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->deleteJson("/projects/{$project->id}", [], ['X-Tenant-Id' => $tenant->id])
+        ->deleteJson("/api/projects/{$project->id}", [], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -221,14 +221,14 @@ test('missing X-Tenant-Id header returns 400', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->getJson('/projects')
+        ->getJson('/api/projects')
         ->assertStatus(400);
 });
 
 test('unauthenticated request returns 401', function (): void {
     $tenant = Tenant::factory()->create();
 
-    $this->getJson('/projects', ['X-Tenant-Id' => $tenant->id])
+    $this->getJson('/api/projects', ['X-Tenant-Id' => $tenant->id])
         ->assertUnauthorized();
 });
 
@@ -237,7 +237,7 @@ test('project tenant_id is auto-filled from TenantContext on create', function (
     $user = attachUserToTenant($tenant, 'owner');
 
     $this->actingAs($user)
-        ->postJson('/projects', ['name' => 'Auto-filled'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/projects', ['name' => 'Auto-filled'], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
         ->assertJsonPath('data.tenant_id', $tenant->id);
 });
@@ -250,7 +250,7 @@ test('platform admin does not automatically bypass ProjectPolicy', function (): 
     $tenant->users()->attach($admin, ['membership_role' => 'member']);
 
     $this->actingAs($admin)
-        ->postJson('/projects', ['name' => 'Platform Bypass Attempt'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/projects', ['name' => 'Platform Bypass Attempt'], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -265,7 +265,7 @@ test('project index returns paginated response with meta and links', function ()
     }
 
     $this->actingAs($user)
-        ->getJson('/projects', ['X-Tenant-Id' => $tenant->id])
+        ->getJson('/api/projects', ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonStructure(['data', 'links', 'meta'])
         ->assertJsonPath('meta.total', 3)
@@ -283,7 +283,7 @@ test('project index pagination respects tenant isolation', function (): void {
     }
 
     $this->actingAs($user)
-        ->getJson('/projects', ['X-Tenant-Id' => $tenantA->id])
+        ->getJson('/api/projects', ['X-Tenant-Id' => $tenantA->id])
         ->assertOk()
         ->assertJsonPath('meta.total', 5); // Only Tenant A's 5 projects
 });
@@ -297,7 +297,7 @@ test('project index page size defaults to 15', function (): void {
     }
 
     $this->actingAs($user)
-        ->getJson('/projects', ['X-Tenant-Id' => $tenant->id])
+        ->getJson('/api/projects', ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonCount(15, 'data')           // First page: 15 items
         ->assertJsonPath('meta.total', 20)       // Total across all pages
@@ -312,7 +312,7 @@ test('creating a project with a valid status succeeds', function (): void {
 
     foreach (['active', 'inactive', 'archived'] as $status) {
         $this->actingAs($user)
-            ->postJson('/projects', ['name' => "Project ({$status})", 'status' => $status], ['X-Tenant-Id' => $tenant->id])
+            ->postJson('/api/projects', ['name' => "Project ({$status})", 'status' => $status], ['X-Tenant-Id' => $tenant->id])
             ->assertCreated()
             ->assertJsonPath('data.status', $status);
     }
@@ -323,7 +323,7 @@ test('creating a project with an invalid status returns 422', function (): void 
     $user = attachUserToTenant($tenant, 'owner');
 
     $this->actingAs($user)
-        ->postJson('/projects', ['name' => 'Bad Status', 'status' => 'pending'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/projects', ['name' => 'Bad Status', 'status' => 'pending'], ['X-Tenant-Id' => $tenant->id])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['status']);
 });
@@ -334,7 +334,7 @@ test('updating a project status with an invalid value returns 422', function ():
     $project = seedProjectForTenant($tenant);
 
     $this->actingAs($user)
-        ->patchJson("/projects/{$project->id}", ['status' => 'deleted'], ['X-Tenant-Id' => $tenant->id])
+        ->patchJson("/api/projects/{$project->id}", ['status' => 'deleted'], ['X-Tenant-Id' => $tenant->id])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['status']);
 });
@@ -344,7 +344,7 @@ test('project status is returned as a string value in response', function (): vo
     $user = attachUserToTenant($tenant, 'owner');
 
     $this->actingAs($user)
-        ->postJson('/projects', ['name' => 'Status Test', 'status' => 'inactive'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/projects', ['name' => 'Status Test', 'status' => 'inactive'], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
         ->assertJsonPath('data.status', 'inactive'); // enum value, not enum name
 });
@@ -354,7 +354,7 @@ test('project status defaults to active when not specified', function (): void {
     $user = attachUserToTenant($tenant, 'owner');
 
     $this->actingAs($user)
-        ->postJson('/projects', ['name' => 'No Status'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/projects', ['name' => 'No Status'], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
         ->assertJsonPath('data.status', 'active');
 });

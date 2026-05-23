@@ -74,7 +74,7 @@ test('Tenant A cannot list Tenant B form versions', function (): void {
 
     // Access via Tenant B's form ID — TenantScope prevents resolution
     $this->actingAs($userA)
-        ->getJson("/forms/{$formB->id}/versions", ['X-Tenant-Id' => $tenantA->id])
+        ->getJson("/api/forms/{$formB->id}/versions", ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
 });
 
@@ -92,7 +92,7 @@ test('Tenant A cannot view Tenant B form version directly', function (): void {
     // FormVersion has no BelongsToTenant, but the route guard resolves Form first.
     // Without TenantScope on the version, this test ensures the parent form 404s.
     $this->actingAs($userA)
-        ->getJson("/form-versions/{$versionB->id}", ['X-Tenant-Id' => $tenantA->id])
+        ->getJson("/api/form-versions/{$versionB->id}", ['X-Tenant-Id' => $tenantA->id])
         ->assertForbidden(); // version resolves but policy denies cross-tenant
 });
 
@@ -104,7 +104,7 @@ test('admin can create a form version', function (): void {
     $form   = fvSeedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", [
+        ->postJson("/api/forms/{$form->id}/versions", [
             'schema' => validSchema(),
             'label'  => 'v1',
         ], ['X-Tenant-Id' => $tenant->id])
@@ -119,7 +119,7 @@ test('member cannot create a form version', function (): void {
     $form   = fvSeedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", [
+        ->postJson("/api/forms/{$form->id}/versions", [
             'schema' => validSchema(),
         ], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
@@ -139,7 +139,7 @@ test('member can view form versions', function (): void {
     ]);
 
     $this->actingAs($user)
-        ->getJson("/forms/{$form->id}/versions", ['X-Tenant-Id' => $tenant->id])
+        ->getJson("/api/forms/{$form->id}/versions", ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonCount(1, 'data');
 });
@@ -152,17 +152,17 @@ test('version numbers increment monotonically', function (): void {
     $form   = fvSeedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => validSchema('V1')], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => validSchema('V1')], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
         ->assertJsonPath('data.version_number', 1);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => validSchema('V2')], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => validSchema('V2')], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
         ->assertJsonPath('data.version_number', 2);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => validSchema('V3')], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => validSchema('V3')], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
         ->assertJsonPath('data.version_number', 3);
 });
@@ -194,7 +194,7 @@ test('schema_hash is computed and stored correctly', function (): void {
     $schema = validSchema();
 
     $response = $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => $schema], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => $schema], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated();
 
     expect($response->json('data.schema_hash'))
@@ -207,7 +207,7 @@ test('cannot create version for archived form', function (): void {
     $form   = fvSeedForm($tenant, ['status' => 'archived']);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => validSchema()], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => validSchema()], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -228,7 +228,7 @@ test('invalid schema is rejected when creating version', function (): void {
     ];
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => $badSchema], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => $badSchema], ['X-Tenant-Id' => $tenant->id])
         ->assertUnprocessable()
         ->assertJsonStructure(['errors']);
 });
@@ -248,7 +248,7 @@ test('duplicate field keys are rejected in schema', function (): void {
     ];
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => $badSchema], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => $badSchema], ['X-Tenant-Id' => $tenant->id])
         ->assertUnprocessable();
 });
 
@@ -266,7 +266,7 @@ test('select field without options is rejected', function (): void {
     ];
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => $badSchema], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => $badSchema], ['X-Tenant-Id' => $tenant->id])
         ->assertUnprocessable();
 });
 
@@ -284,6 +284,6 @@ test('unknown field type is rejected', function (): void {
     ];
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/versions", ['schema' => $badSchema], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/versions", ['schema' => $badSchema], ['X-Tenant-Id' => $tenant->id])
         ->assertUnprocessable();
 });

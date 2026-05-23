@@ -32,6 +32,8 @@ class FormController
     {
         Gate::authorize('view', $form);
 
+        $form->loadMissing('activeVersion');
+
         return new FormResource($form);
     }
 

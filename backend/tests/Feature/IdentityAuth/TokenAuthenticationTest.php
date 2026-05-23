@@ -13,7 +13,7 @@ test('valid credentials issue token', function (): void {
         'password' => bcrypt('password123'),
     ]);
 
-    $response = $this->postJson('/auth/token', [
+    $response = $this->postJson('/api/auth/token', [
         'email' => 'test@example.com',
         'password' => 'password123',
         'token_name' => 'test-token',
@@ -44,7 +44,7 @@ test('invalid credentials return 401 with generic message', function (): void {
         'password' => bcrypt('password123'),
     ]);
 
-    $response = $this->postJson('/auth/token', [
+    $response = $this->postJson('/api/auth/token', [
         'email' => 'test@example.com',
         'password' => 'wrong-password',
     ]);
@@ -63,7 +63,7 @@ test('issued token can access GET /auth/me', function (): void {
         'password' => bcrypt('password123'),
     ]);
 
-    $tokenResponse = $this->postJson('/auth/token', [
+    $tokenResponse = $this->postJson('/api/auth/token', [
         'email' => 'test@example.com',
         'password' => 'password123',
     ]);
@@ -72,7 +72,7 @@ test('issued token can access GET /auth/me', function (): void {
 
     $response = $this->withHeaders([
         'Authorization' => 'Bearer '.$token,
-    ])->getJson('/auth/me');
+    ])->getJson('/api/auth/me');
 
     $response->assertStatus(200);
 
@@ -89,7 +89,7 @@ test('current token can be revoked', function (): void {
         'password' => bcrypt('password123'),
     ]);
 
-    $tokenResponse = $this->postJson('/auth/token', [
+    $tokenResponse = $this->postJson('/api/auth/token', [
         'email' => 'test@example.com',
         'password' => 'password123',
     ]);
@@ -98,7 +98,7 @@ test('current token can be revoked', function (): void {
 
     $revokeResponse = $this->withHeaders([
         'Authorization' => 'Bearer '.$token,
-    ])->deleteJson('/auth/token/current');
+    ])->deleteJson('/api/auth/token/current');
 
     $revokeResponse->assertStatus(200);
 
@@ -113,7 +113,7 @@ test('revoked token can no longer access GET /auth/me', function (): void {
         'password' => bcrypt('password123'),
     ]);
 
-    $tokenResponse = $this->postJson('/auth/token', [
+    $tokenResponse = $this->postJson('/api/auth/token', [
         'email' => 'test@example.com',
         'password' => 'password123',
     ]);
@@ -123,7 +123,7 @@ test('revoked token can no longer access GET /auth/me', function (): void {
     // Revoke the token
     $this->withHeaders([
         'Authorization' => 'Bearer '.$token,
-    ])->deleteJson('/auth/token/current');
+    ])->deleteJson('/api/auth/token/current');
 
     // Assert the token was actually deleted from the database
     $this->assertDatabaseCount('personal_access_tokens', 0);
@@ -134,7 +134,7 @@ test('revoked token can no longer access GET /auth/me', function (): void {
     // Try to access /auth/me with the revoked token
     $response = $this->withHeaders([
         'Authorization' => 'Bearer '.$token,
-    ])->getJson('/auth/me');
+    ])->getJson('/api/auth/me');
 
     $response->assertStatus(401);
 });
@@ -145,7 +145,7 @@ test('token response does not include roles, permissions, or tenant context', fu
         'password' => bcrypt('password123'),
     ]);
 
-    $response = $this->postJson('/auth/token', [
+    $response = $this->postJson('/api/auth/token', [
         'email' => 'test@example.com',
         'password' => 'password123',
     ]);

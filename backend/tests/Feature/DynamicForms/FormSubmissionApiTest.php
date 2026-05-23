@@ -102,7 +102,7 @@ test('Tenant A cannot submit to Tenant B form', function (): void {
     $formB = fsCreatePublishedForm($tenantB);
 
     $this->actingAs($userA)
-        ->postJson("/forms/{$formB->id}/submit", [
+        ->postJson("/api/forms/{$formB->id}/submit", [
             'payload' => ['full_name' => 'Hacker'],
         ], ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
@@ -127,7 +127,7 @@ test('Tenant A cannot list Tenant B submissions', function (): void {
     ]);
 
     $this->actingAs($userA)
-        ->getJson("/forms/{$formB->id}/submissions", ['X-Tenant-Id' => $tenantA->id])
+        ->getJson("/api/forms/{$formB->id}/submissions", ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound(); // form resolves to null under Tenant A's scope
 });
 
@@ -150,7 +150,7 @@ test('Tenant A cannot view Tenant B submission directly', function (): void {
 
     // FormSubmission has BelongsToTenant — TenantScope filters it to 404 for a different tenant.
     $this->actingAs($userA)
-        ->getJson("/submissions/{$submission->id}", ['X-Tenant-Id' => $tenantA->id])
+        ->getJson("/api/submissions/{$submission->id}", ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
 });
 
@@ -162,7 +162,7 @@ test('member can submit a published form with valid payload', function (): void 
     $form   = fsCreatePublishedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => [
                 'full_name' => 'Jane Smith',
                 'email'     => 'jane@example.com',
@@ -182,7 +182,7 @@ test('submission preserves exact form_version_id at time of submission', functio
     $version = $form->activeVersion;
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => ['full_name' => 'Test User', 'email' => 'test@test.com', 'country' => 'us'],
         ], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
@@ -195,7 +195,7 @@ test('submission payload strips unknown keys silently', function (): void {
     $form   = fsCreatePublishedForm($tenant);
 
     $response = $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => [
                 'full_name'       => 'Jane',
                 'email'           => 'jane@example.com',
@@ -217,7 +217,7 @@ test('submitted_by is set to authenticated user id', function (): void {
     $form   = fsCreatePublishedForm($tenant);
 
     $response = $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => ['full_name' => 'User', 'email' => 'u@u.com', 'country' => 'us'],
         ], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated();
@@ -233,7 +233,7 @@ test('missing required field returns 422 with field error', function (): void {
     $form   = fsCreatePublishedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => [
                 // full_name is required but missing
                 'email'   => 'jane@example.com',
@@ -250,7 +250,7 @@ test('invalid email format returns 422', function (): void {
     $form   = fsCreatePublishedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => [
                 'full_name' => 'Jane',
                 'email'     => 'not-an-email',
@@ -267,7 +267,7 @@ test('invalid select value returns 422', function (): void {
     $form   = fsCreatePublishedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => [
                 'full_name' => 'Jane',
                 'email'     => 'jane@example.com',
@@ -284,7 +284,7 @@ test('number field with integer_only rejects decimal', function (): void {
     $form   = fsCreatePublishedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => [
                 'full_name' => 'Jane',
                 'email'     => 'jane@example.com',
@@ -356,7 +356,7 @@ test('cannot submit to a draft form', function (): void {
 
     // Send a non-empty payload so FormRequest passes; controller short-circuits with 410
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", ['payload' => ['dummy' => 'data']], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/submit", ['payload' => ['dummy' => 'data']], ['X-Tenant-Id' => $tenant->id])
         ->assertStatus(410);
 });
 
@@ -368,7 +368,7 @@ test('cannot submit to an archived form', function (): void {
 
     // Send a non-empty payload so FormRequest passes; controller short-circuits with 410
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", ['payload' => ['dummy' => 'data']], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/submit", ['payload' => ['dummy' => 'data']], ['X-Tenant-Id' => $tenant->id])
         ->assertStatus(410);
 });
 
@@ -387,7 +387,7 @@ test('admin can list all submissions', function (): void {
     ]);
 
     $this->actingAs($admin)
-        ->getJson("/forms/{$form->id}/submissions", ['X-Tenant-Id' => $tenant->id])
+        ->getJson("/api/forms/{$form->id}/submissions", ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonCount(1, 'data');
 });
@@ -398,7 +398,7 @@ test('member cannot list all submissions', function (): void {
     $form   = fsCreatePublishedForm($tenant);
 
     $this->actingAs($user)
-        ->getJson("/forms/{$form->id}/submissions", ['X-Tenant-Id' => $tenant->id])
+        ->getJson("/api/forms/{$form->id}/submissions", ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -417,7 +417,7 @@ test('member can view their own submission', function (): void {
     ]);
 
     $this->actingAs($user)
-        ->getJson("/submissions/{$submission->id}", ['X-Tenant-Id' => $tenant->id])
+        ->getJson("/api/submissions/{$submission->id}", ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonPath('data.id', $submission->id);
 });
@@ -438,7 +438,7 @@ test('member cannot view another member submission', function (): void {
     ]);
 
     $this->actingAs($userA)
-        ->getJson("/submissions/{$submissionB->id}", ['X-Tenant-Id' => $tenant->id])
+        ->getJson("/api/submissions/{$submissionB->id}", ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -478,14 +478,14 @@ test('duplicate submission is rejected when allow_multiple_submissions is false'
 
     // First submission
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => ['name' => 'First'],
         ], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated();
 
     // Second submission — must be rejected
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/submit", [
+        ->postJson("/api/forms/{$form->id}/submit", [
             'payload' => ['name' => 'Second'],
         ], ['X-Tenant-Id' => $tenant->id])
         ->assertStatus(409);

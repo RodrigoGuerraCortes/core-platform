@@ -77,7 +77,7 @@ test('token issuance dispatches SanctumTokenIssued', function (): void {
         'password' => bcrypt('password123'),
     ]);
 
-    $this->postJson('/auth/token', [
+    $this->postJson('/api/auth/token', [
         'email' => 'test@example.com',
         'password' => 'password123',
         'token_name' => 'my-token',
@@ -93,7 +93,7 @@ test('failed token issuance dispatches LoginFailed', function (): void {
 
     User::factory()->create(['email' => 'test@example.com']);
 
-    $this->postJson('/auth/token', [
+    $this->postJson('/api/auth/token', [
         'email' => 'test@example.com',
         'password' => 'wrong-password',
     ])->assertStatus(401);
@@ -110,7 +110,7 @@ test('token revocation dispatches SanctumTokenRevoked', function (): void {
     $token = $user->createToken('test-token')->plainTextToken;
 
     $this->withHeaders(['Authorization' => 'Bearer '.$token])
-        ->deleteJson('/auth/token/current')
+        ->deleteJson('/api/auth/token/current')
         ->assertStatus(200);
 
     Event::assertDispatched(SanctumTokenRevoked::class, function (SanctumTokenRevoked $event) use ($user): bool {
@@ -121,7 +121,7 @@ test('token revocation dispatches SanctumTokenRevoked', function (): void {
 test('forgot password dispatches PasswordResetRequested', function (): void {
     Event::fake();
 
-    $this->postJson('/auth/forgot-password', [
+    $this->postJson('/api/auth/forgot-password', [
         'email' => 'anyone@example.com',
     ])->assertStatus(200);
 
@@ -136,7 +136,7 @@ test('successful password reset dispatches PasswordChanged', function (): void {
     $user = User::factory()->create(['email' => 'test@example.com']);
     $token = Password::broker()->createToken($user);
 
-    $this->postJson('/auth/reset-password', [
+    $this->postJson('/api/auth/reset-password', [
         'email' => 'test@example.com',
         'token' => $token,
         'password' => 'new-password-123',
@@ -173,7 +173,7 @@ test('resend verification dispatches VerificationEmailResent for unverified user
     $user = User::factory()->unverified()->create();
 
     $this->actingAs($user)
-        ->postJson('/auth/resend-verification')
+        ->postJson('/api/auth/resend-verification')
         ->assertStatus(200);
 
     Event::assertDispatched(VerificationEmailResent::class, function (VerificationEmailResent $event) use ($user): bool {

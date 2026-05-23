@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Shared\Providers;
 
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -59,7 +60,10 @@ abstract class CoreModuleServiceProvider extends ServiceProvider
         $path = $this->routesPath();
 
         if ($path !== null) {
-            $this->loadRoutesFrom($path);
+            // All Core module routes are served under the /api prefix.
+            // Modules define clean relative paths (e.g. /forms) — the prefix
+            // is applied once here so it is never repeated in route files.
+            Route::prefix('api')->group($path);
         }
     }
 

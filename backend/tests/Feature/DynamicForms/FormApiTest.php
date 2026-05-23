@@ -83,7 +83,7 @@ test('Tenant A cannot list Tenant B forms', function (): void {
     dfSeedForm($tenantB, ['name' => 'Form B']);
 
     $this->actingAs($userA)
-        ->getJson('/forms', ['X-Tenant-Id' => $tenantA->id])
+        ->getJson('/api/forms', ['X-Tenant-Id' => $tenantA->id])
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.name', 'Form A');
@@ -96,7 +96,7 @@ test('Tenant A cannot retrieve Tenant B form', function (): void {
     $formB   = dfSeedForm($tenantB);
 
     $this->actingAs($userA)
-        ->getJson("/forms/{$formB->id}", ['X-Tenant-Id' => $tenantA->id])
+        ->getJson("/api/forms/{$formB->id}", ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
 });
 
@@ -107,7 +107,7 @@ test('Tenant A cannot update Tenant B form', function (): void {
     $formB   = dfSeedForm($tenantB);
 
     $this->actingAs($userA)
-        ->patchJson("/forms/{$formB->id}", ['name' => 'Hijacked'], ['X-Tenant-Id' => $tenantA->id])
+        ->patchJson("/api/forms/{$formB->id}", ['name' => 'Hijacked'], ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
 });
 
@@ -118,7 +118,7 @@ test('Tenant A cannot publish Tenant B form', function (): void {
     $formB   = dfSeedForm($tenantB);
 
     $this->actingAs($userA)
-        ->postJson("/forms/{$formB->id}/publish", [], ['X-Tenant-Id' => $tenantA->id])
+        ->postJson("/api/forms/{$formB->id}/publish", [], ['X-Tenant-Id' => $tenantA->id])
         ->assertNotFound();
 });
 
@@ -129,7 +129,7 @@ test('owner can create a form', function (): void {
     $user   = dfAttachUser($tenant, 'owner');
 
     $this->actingAs($user)
-        ->postJson('/forms', ['name' => 'Owner Form'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/forms', ['name' => 'Owner Form'], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated()
         ->assertJsonPath('data.name', 'Owner Form')
         ->assertJsonPath('data.status', 'draft');
@@ -140,7 +140,7 @@ test('admin can create a form', function (): void {
     $user   = dfAttachUser($tenant, 'admin');
 
     $this->actingAs($user)
-        ->postJson('/forms', ['name' => 'Admin Form'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/forms', ['name' => 'Admin Form'], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated();
 });
 
@@ -150,7 +150,7 @@ test('owner can update a form', function (): void {
     $form   = dfSeedForm($tenant);
 
     $this->actingAs($user)
-        ->patchJson("/forms/{$form->id}", ['name' => 'Updated Name'], ['X-Tenant-Id' => $tenant->id])
+        ->patchJson("/api/forms/{$form->id}", ['name' => 'Updated Name'], ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonPath('data.name', 'Updated Name');
 });
@@ -161,7 +161,7 @@ test('admin can archive a form', function (): void {
     $form   = dfSeedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/archive", [], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/archive", [], ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonPath('data.status', 'archived');
 });
@@ -174,7 +174,7 @@ test('member can list forms', function (): void {
     dfSeedForm($tenant);
 
     $this->actingAs($user)
-        ->getJson('/forms', ['X-Tenant-Id' => $tenant->id])
+        ->getJson('/api/forms', ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonCount(1, 'data');
 });
@@ -185,7 +185,7 @@ test('member can view a form', function (): void {
     $form   = dfSeedForm($tenant);
 
     $this->actingAs($user)
-        ->getJson("/forms/{$form->id}", ['X-Tenant-Id' => $tenant->id])
+        ->getJson("/api/forms/{$form->id}", ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonPath('data.id', $form->id);
 });
@@ -195,7 +195,7 @@ test('member cannot create a form', function (): void {
     $user   = dfAttachUser($tenant, 'member');
 
     $this->actingAs($user)
-        ->postJson('/forms', ['name' => 'Forbidden'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/forms', ['name' => 'Forbidden'], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -205,7 +205,7 @@ test('member cannot update a form', function (): void {
     $form   = dfSeedForm($tenant);
 
     $this->actingAs($user)
-        ->patchJson("/forms/{$form->id}", ['name' => 'Nope'], ['X-Tenant-Id' => $tenant->id])
+        ->patchJson("/api/forms/{$form->id}", ['name' => 'Nope'], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -215,7 +215,7 @@ test('member cannot publish a form', function (): void {
     $form   = dfSeedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/publish", [], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/publish", [], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -225,7 +225,7 @@ test('member cannot archive a form', function (): void {
     $form   = dfSeedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/archive", [], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/archive", [], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -238,7 +238,7 @@ test('publishing a form sets status to active and active_version_id', function (
     dfSeedVersion($form);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/publish", [], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/publish", [], ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonPath('data.status', 'active')
         ->assertJsonFragment(['active_version_id' => $form->versions()->first()->id]);
@@ -250,7 +250,7 @@ test('cannot publish a form with no versions', function (): void {
     $form   = dfSeedForm($tenant);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/publish", [], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/publish", [], ['X-Tenant-Id' => $tenant->id])
         ->assertUnprocessable();
 });
 
@@ -261,7 +261,7 @@ test('cannot publish an archived form', function (): void {
     dfSeedVersion($form);
 
     $this->actingAs($user)
-        ->postJson("/forms/{$form->id}/publish", [], ['X-Tenant-Id' => $tenant->id])
+        ->postJson("/api/forms/{$form->id}/publish", [], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -271,7 +271,7 @@ test('cannot update an archived form', function (): void {
     $form   = dfSeedForm($tenant, ['status' => 'archived']);
 
     $this->actingAs($user)
-        ->patchJson("/forms/{$form->id}", ['name' => 'Nope'], ['X-Tenant-Id' => $tenant->id])
+        ->patchJson("/api/forms/{$form->id}", ['name' => 'Nope'], ['X-Tenant-Id' => $tenant->id])
         ->assertForbidden();
 });
 
@@ -282,7 +282,7 @@ test('tenant_id is auto-filled on form creation', function (): void {
     $user   = dfAttachUser($tenant, 'owner');
 
     $response = $this->actingAs($user)
-        ->postJson('/forms', ['name' => 'Auto Tenant'], ['X-Tenant-Id' => $tenant->id])
+        ->postJson('/api/forms', ['name' => 'Auto Tenant'], ['X-Tenant-Id' => $tenant->id])
         ->assertCreated();
 
     expect($response->json('data.tenant_id'))->toBe($tenant->id);
@@ -296,13 +296,13 @@ test('status filter on list', function (): void {
     $active = dfSeedForm($tenant, ['name' => 'Active Form', 'status' => 'active']);
 
     $this->actingAs($user)
-        ->getJson('/forms?status=active', ['X-Tenant-Id' => $tenant->id])
+        ->getJson('/api/forms?status=active', ['X-Tenant-Id' => $tenant->id])
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $active->id);
 });
 
 test('unauthenticated request is rejected', function (): void {
-    $this->getJson('/forms', ['X-Tenant-Id' => 1])
+    $this->getJson('/api/forms', ['X-Tenant-Id' => 1])
         ->assertUnauthorized();
 });

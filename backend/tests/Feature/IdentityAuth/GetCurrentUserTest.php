@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 
 test('unauthenticated request to GET /auth/me returns 401', function (): void {
-    $response = $this->getJson('/auth/me');
+    $response = $this->getJson('/api/auth/me');
 
     $response->assertStatus(401);
 });
@@ -17,7 +17,7 @@ test('authenticated request to GET /auth/me returns user identity', function ():
         'is_platform_admin' => false,
     ]);
 
-    $response = $this->actingAs($user)->getJson('/auth/me');
+    $response = $this->actingAs($user)->getJson('/api/auth/me');
 
     $response->assertStatus(200);
 
@@ -43,7 +43,7 @@ test('authenticated request to GET /auth/me returns user identity', function ():
 test('response does not include roles, permissions, or tenant context', function (): void {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->getJson('/auth/me');
+    $response = $this->actingAs($user)->getJson('/api/auth/me');
 
     $response->assertStatus(200);
 

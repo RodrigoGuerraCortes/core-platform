@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Password;
 test('forgot password returns generic success for existing email', function (): void {
     User::factory()->create(['email' => 'existing@example.com']);
 
-    $response = $this->postJson('/auth/forgot-password', [
+    $response = $this->postJson('/api/auth/forgot-password', [
         'email' => 'existing@example.com',
     ]);
 
@@ -21,7 +21,7 @@ test('forgot password returns generic success for existing email', function (): 
 });
 
 test('forgot password returns generic success for unknown email', function (): void {
-    $response = $this->postJson('/auth/forgot-password', [
+    $response = $this->postJson('/api/auth/forgot-password', [
         'email' => 'nobody@example.com',
     ]);
 
@@ -36,7 +36,7 @@ test('forgot password sends reset notification for existing user', function (): 
 
     $user = User::factory()->create(['email' => 'existing@example.com']);
 
-    $this->postJson('/auth/forgot-password', [
+    $this->postJson('/api/auth/forgot-password', [
         'email' => 'existing@example.com',
     ]);
 
@@ -48,7 +48,7 @@ test('reset password succeeds with valid token', function (): void {
 
     $token = Password::broker()->createToken($user);
 
-    $response = $this->postJson('/auth/reset-password', [
+    $response = $this->postJson('/api/auth/reset-password', [
         'email' => 'user@example.com',
         'token' => $token,
         'password' => 'new-password-123',
@@ -64,7 +64,7 @@ test('reset password succeeds with valid token', function (): void {
 test('reset password fails with invalid token', function (): void {
     User::factory()->create(['email' => 'user@example.com']);
 
-    $response = $this->postJson('/auth/reset-password', [
+    $response = $this->postJson('/api/auth/reset-password', [
         'email' => 'user@example.com',
         'token' => 'invalid-token',
         'password' => 'new-password-123',
@@ -82,7 +82,7 @@ test('reset password does not auto-login user', function (): void {
 
     $token = Password::broker()->createToken($user);
 
-    $this->postJson('/auth/reset-password', [
+    $this->postJson('/api/auth/reset-password', [
         'email' => 'user@example.com',
         'token' => $token,
         'password' => 'new-password-123',
@@ -97,7 +97,7 @@ test('password reset responses do not include roles permissions or tenant contex
 
     $token = Password::broker()->createToken($user);
 
-    $resetResponse = $this->postJson('/auth/reset-password', [
+    $resetResponse = $this->postJson('/api/auth/reset-password', [
         'email' => 'user@example.com',
         'token' => $token,
         'password' => 'new-password-123',
@@ -110,7 +110,7 @@ test('password reset responses do not include roles permissions or tenant contex
     $resetResponse->assertJsonMissingPath('data.tenant_id');
     $resetResponse->assertJsonMissingPath('data.tenant');
 
-    $forgotResponse = $this->postJson('/auth/forgot-password', [
+    $forgotResponse = $this->postJson('/api/auth/forgot-password', [
         'email' => 'user@example.com',
     ]);
 

@@ -43,7 +43,7 @@ test('invalid verification link fails safely', function (): void {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->getJson(
-        "/auth/verify-email/{$user->id}/invalid-hash"
+        "/api/auth/verify-email/{$user->id}/invalid-hash"
     );
 
     $response->assertStatus(403);
@@ -54,7 +54,7 @@ test('authenticated unverified user can request verification resend', function (
 
     $user = User::factory()->unverified()->create();
 
-    $response = $this->actingAs($user)->postJson('/auth/resend-verification');
+    $response = $this->actingAs($user)->postJson('/api/auth/resend-verification');
 
     $response->assertStatus(200);
     $response->assertJson([
@@ -69,7 +69,7 @@ test('authenticated verified user can request verification resend safely', funct
 
     $user = User::factory()->create(); // already verified
 
-    $response = $this->actingAs($user)->postJson('/auth/resend-verification');
+    $response = $this->actingAs($user)->postJson('/api/auth/resend-verification');
 
     $response->assertStatus(200);
     $response->assertJson([
@@ -80,7 +80,7 @@ test('authenticated verified user can request verification resend safely', funct
 });
 
 test('unauthenticated user cannot request verification resend', function (): void {
-    $response = $this->postJson('/auth/resend-verification');
+    $response = $this->postJson('/api/auth/resend-verification');
 
     $response->assertStatus(401);
 });
@@ -102,7 +102,7 @@ test('email verification responses do not include roles permissions or tenant co
     $verifyResponse->assertJsonMissingPath('data.tenant_id');
     $verifyResponse->assertJsonMissingPath('data.tenant');
 
-    $resendResponse = $this->actingAs($user)->postJson('/auth/resend-verification');
+    $resendResponse = $this->actingAs($user)->postJson('/api/auth/resend-verification');
 
     $resendResponse->assertStatus(200);
     $resendResponse->assertJsonMissingPath('data.roles');

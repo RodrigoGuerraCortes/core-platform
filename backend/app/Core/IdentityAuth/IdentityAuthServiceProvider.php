@@ -20,6 +20,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Route;
 
 class IdentityAuthServiceProvider extends ServiceProvider
 {
@@ -30,7 +31,8 @@ class IdentityAuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__.'/Routes/api.php');
+        // IdentityAuth API routes live under /api (platform convention).
+        Route::prefix('api')->group(__DIR__.'/Routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/Routes/web.php');
 
         // Configure the password reset URL for the ResetPassword notification.
