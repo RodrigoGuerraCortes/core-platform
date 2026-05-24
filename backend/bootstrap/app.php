@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Enable session-based authentication for Sanctum SPA on stateful domains.
+        // Adds EnsureFrontendRequestsAreStateful to the api middleware group so
+        // the session cookie is read on /api/* routes for configured origins.
+        $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -61,9 +61,19 @@ abstract class CoreModuleServiceProvider extends ServiceProvider
 
         if ($path !== null) {
             // All Core module routes are served under the /api prefix.
-            // Modules define clean relative paths (e.g. /forms) — the prefix
-            // is applied once here so it is never repeated in route files.
-            Route::prefix('api')->group($path);
+            //
+            // We apply EnsureFrontendRequestsAreStateful explicitly rather than
+            // the full 'api' middleware group, to avoid its SubstituteBindings
+            // running before ResolveTenant sets the tenant context.
+            // Tenant-protected routes already have SubstituteBindings in the
+            // TenantRouteMiddleware::STACK. Public routes (login, etc.) have
+            // no route model binding so they don't need it.
+            //
+            // EnsureFrontendRequestsAreStateful: starts the session for stateful
+            // Sanctum SPA requests (requests from SANCTUM_STATEFUL_DOMAINS).
+            Route::middleware([
+                \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            ])->prefix('api')->group($path);
         }
     }
 

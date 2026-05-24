@@ -8,6 +8,13 @@ use App\Core\IdentityAuth\Http\Controllers\PasswordController;
 use App\Core\IdentityAuth\Http\Controllers\TokenController;
 use Illuminate\Support\Facades\Route;
 
+// ── SPA session authentication (Sanctum stateful) ─────────────────────────────
+// Login/logout are session-based. No tokens are issued.
+// EnsureFrontendRequestsAreStateful (added via $middleware->statefulApi() in
+// bootstrap/app.php) provides session + CSRF support on stateful domains.
+Route::post('/auth/login', [AuthController::class, 'login'])
+    ->name('auth.session.login');
+
 // Public routes
 Route::post('/auth/token', [TokenController::class, 'issue'])
     ->name('auth.token.issue');
@@ -20,6 +27,8 @@ Route::post('/auth/reset-password', [PasswordController::class, 'resetPassword']
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function (): void {
+    Route::post('/auth/logout', [AuthController::class, 'logout'])
+        ->name('auth.session.logout');
     Route::get('/auth/me', [AuthController::class, 'currentUser'])
         ->name('auth.me');
 

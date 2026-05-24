@@ -34,7 +34,14 @@ export default defineConfig({
     //   - On host (no container): BACKEND_URL is unset → falls back to nginx's exposed port.
     //   - In Docker container:    BACKEND_URL=http://nginx:80 (set via docker-compose env).
     proxy: {
+      // All /api/* requests are forwarded to the Laravel backend.
       '/api': {
+        target: process.env.BACKEND_URL ?? 'http://localhost:8010',
+        changeOrigin: true,
+      },
+      // Sanctum CSRF cookie endpoint — must be proxied so the browser receives
+      // the XSRF-TOKEN cookie on the same origin as the SPA (localhost:5173).
+      '/sanctum': {
         target: process.env.BACKEND_URL ?? 'http://localhost:8010',
         changeOrigin: true,
       },

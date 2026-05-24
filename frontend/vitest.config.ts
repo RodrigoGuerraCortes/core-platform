@@ -11,6 +11,12 @@ export default defineConfig({
     // css:false suppresses CSS module processing. We also inline Vuetify so that
     // Vite's transform pipeline (not Node's ESM loader) handles its CSS imports.
     css: false,
+    // Override VITE_API_BASE_URL so API calls in jsdom tests use relative paths.
+    // The .env value (http://localhost:8010/api) targets the real backend which
+    // is unreachable in tests; relative paths let MSW path-only handlers match.
+    env: {
+      VITE_API_BASE_URL: '/api',
+    },
     server: {
       deps: {
         // Forces Vite — not Node — to resolve Vuetify. This lets vite-plugin-vuetify

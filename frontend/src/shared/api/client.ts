@@ -2,20 +2,19 @@ import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 
 // ─── Module-level state (avoids circular Pinia dependency at import time) ─────
-// Stores call setActiveTenant() / setAuthToken() after Pinia is ready.
+// Stores call setActiveTenant() after Pinia is ready.
 
 let _tenantId: string | null = null
-let _authToken: string | null = null
 
 export function setActiveTenant(id: string | null): void {
   _tenantId = id
 }
 
-export function setAuthToken(token: string | null): void {
-  _authToken = token
-}
-
 // ─── Axios instance ────────────────────────────────────────────────────────────
+// withCredentials: true  — sends the laravel_session + XSRF-TOKEN cookies
+//                          with every API request (required for Sanctum SPA).
+// xsrfCookieName/Header — Axios reads XSRF-TOKEN cookie and attaches it as
+//                          X-XSRF-TOKEN header automatically on mutating methods.
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
@@ -23,17 +22,14 @@ const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
-  // Set to true only if you switch to Sanctum SPA cookie auth.
-  withCredentials: false,
+  withCredentials: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
 })
 
 // ─── Request interceptor ───────────────────────────────────────────────────────
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (_authToken) {
-    config.headers.Authorization = `Bearer ${_authToken}`
-  }
-
   if (_tenantId) {
     config.headers['X-Tenant-Id'] = _tenantId
   }

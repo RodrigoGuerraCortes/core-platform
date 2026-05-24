@@ -31,8 +31,14 @@ class IdentityAuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // IdentityAuth API routes live under /api (platform convention).
-        Route::prefix('api')->group(__DIR__.'/Routes/api.php');
+        // IdentityAuth API routes live under /api.
+        // EnsureFrontendRequestsAreStateful starts the session for stateful
+        // Sanctum SPA requests so login/logout can call $request->session().
+        // We avoid the full 'api' group to prevent its SubstituteBindings
+        // from conflicting with the tenant middleware ordering.
+        Route::middleware([
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ])->prefix('api')->group(__DIR__.'/Routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/Routes/web.php');
 
         // Configure the password reset URL for the ResetPassword notification.

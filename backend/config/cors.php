@@ -86,6 +86,7 @@ return [
     |
     */
 
-    'supports_credentials' => false,
+    // Must be true for Sanctum SPA cookie auth (withCredentials in Axios).
+    'supports_credentials' => true,
 
 ];

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { dynamicFormsRoutes } from '@/modules/dynamic-forms/routes'
+import { useAuthStore } from '@/stores/auth'
 
 /**
  * Route records are registered here at the top level.
@@ -9,6 +10,10 @@ import { dynamicFormsRoutes } from '@/modules/dynamic-forms/routes'
  *
  * Convention: module routes are lazy-loaded and namespaced under a shared
  * parent path. Example: /t/:tenantId/forms → DynamicForms module.
+ *
+ * Route meta:
+ *   requiresAuth  — redirect to /login if unauthenticated
+ *   guestOnly     — redirect to /home if already authenticated
  */
 const routes: RouteRecordRaw[] = [
   {
@@ -29,7 +34,7 @@ const routes: RouteRecordRaw[] = [
   },
 
   {
-    // Unauthenticated shell — login, register, etc.
+    // Unauthenticated shell — login, password reset, etc.
     path: '/',
     component: () => import('@/layouts/GuestLayout.vue'),
     children: [
@@ -37,6 +42,12 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'home',
         component: () => import('@/app/pages/HomePage.vue'),
+      },
+      {
+        path: 'login',
+        name: 'login',
+        component: () => import('@/app/pages/LoginPage.vue'),
+        meta: { guestOnly: true },
       },
     ],
   },
@@ -54,6 +65,24 @@ const router = createRouter({
   scrollBehavior(_to, _from, savedPosition) {
     return savedPosition ?? { top: 0 }
   },
+})
+
+// ─── Navigation guard ─────────────────────────────────────────────────────────
+// bootstrapCurrentUser() in main.ts awaits completion before app.use(router),
+// so isBootstrapping will always be false when this guard first runs.
+
+router.beforeEach((to) => {
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    // Preserve the intended destination so LoginPage can redirect back.
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
+    // Already authenticated — send to the home page (tenant selection next).
+    return { name: 'home' }
+  }
 })
 
 export default router
