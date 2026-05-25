@@ -1,15 +1,20 @@
 import { useQuery } from '@tanstack/vue-query'
-import type { MaybeRef } from 'vue'
+import { toValue, type MaybeRef } from 'vue'
 import { fetchForms } from '../api/forms'
+import type { TableQueryParams } from '@/shared/table'
 
 /**
- * Paginated list of forms for the current tenant.
- * Cache key: ['forms', 'list', page]
+ * Paginated + filtered list of forms for the current tenant.
+ *
+ * Accepts a MaybeRef<TableQueryParams> so it stays reactive when bound
+ * to useTableState().queryParams.
+ *
+ * Cache key: ['forms', 'list', queryParams]
  */
-export function useFormsQuery(page: MaybeRef<number> = 1) {
+export function useFormsQuery(queryParams: MaybeRef<TableQueryParams> = { page: 1, per_page: 15 }) {
   return useQuery({
-    queryKey: ['forms', 'list', page] as const,
-    queryFn: () => fetchForms(page as unknown as number),
+    queryKey: ['forms', 'list', queryParams] as const,
+    queryFn: () => fetchForms(toValue(queryParams)),
     staleTime: 30_000,
     retry: 1,
   })

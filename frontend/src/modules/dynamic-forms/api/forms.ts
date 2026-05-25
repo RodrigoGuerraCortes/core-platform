@@ -22,9 +22,18 @@ function assertNumericId(id: unknown, label = 'formId'): asserts id is number {
 // ─── Forms ────────────────────────────────────────────────────────────────────
 
 /** Fetch paginated list of forms for the current tenant. */
-export async function fetchForms(page = 1): Promise<PaginatedResponse<FormDetail>> {
+export async function fetchForms(params: {
+  page?: number
+  per_page?: number
+  search?: string | null
+  status?: string | null
+  sort_by?: string
+  sort_dir?: 'asc' | 'desc'
+} = {}): Promise<PaginatedResponse<FormDetail>> {
   const { data } = await apiClient.get<PaginatedResponse<FormDetail>>('/forms', {
-    params: { page },
+    params: Object.fromEntries(
+      Object.entries(params).filter(([, v]) => v !== null && v !== undefined && v !== ''),
+    ),
   })
   return data
 }
