@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { dynamicFormsRoutes } from '@/modules/dynamic-forms/routes'
+import { referenceRoutes } from '@/modules/reference/routes'
 import { useAuthStore } from '@/stores/auth'
 
 /**
@@ -29,6 +30,7 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, requiresTenant: true },
       },
       ...dynamicFormsRoutes,
+      ...referenceRoutes,
       // Additional module routes are added here as modules are built.
     ],
   },

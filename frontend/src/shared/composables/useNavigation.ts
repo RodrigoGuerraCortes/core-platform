@@ -44,6 +44,12 @@ export function useNavigation(tenantSlug: MaybeRefOrGetter<string | null>) {
         name: 'forms.index',
         to: `${base}/forms`,
       },
+      {
+        label: 'Reference',
+        icon: 'mdi-book-open-page-variant-outline',
+        name: 'reference',
+        to: `${base}/reference`,
+      },
       // Future modules append items here (or use a plugin registry).
     ]
   })

@@ -13,9 +13,9 @@ describe('useNavigation', () => {
     expect(items.value).toHaveLength(0)
   })
 
-  it('returns two top-level items when tenantSlug is provided', () => {
+  it('returns three top-level items when tenantSlug is provided', () => {
     const { items } = useNavigation(() => 'acme')
-    expect(items.value).toHaveLength(2)
+    expect(items.value).toHaveLength(3)
   })
 
   it('prefixes every item to path with the tenant slug', () => {
@@ -39,6 +39,13 @@ describe('useNavigation', () => {
     expect(forms!.to).toBe('/t/acme/forms')
   })
 
+  it('includes a Reference item pointing to /reference', () => {
+    const { items } = useNavigation(() => 'acme')
+    const ref = items.value.find((i) => i.name === 'reference')
+    expect(ref).toBeDefined()
+    expect(ref!.to).toBe('/t/acme/reference')
+  })
+
   it('reacts when a ref changes from null to a slug', () => {
     const slug = ref<string | null>(null)
     const { items } = useNavigation(slug)
@@ -46,7 +53,7 @@ describe('useNavigation', () => {
     expect(items.value).toHaveLength(0)
 
     slug.value = 'beta'
-    expect(items.value).toHaveLength(2)
+    expect(items.value).toHaveLength(3)
     expect(items.value[0].to).toMatch(/^\/t\/beta\//)
   })
 
