@@ -105,6 +105,25 @@ const activity = computed(() => {
     },
   ].filter((e) => e.timestamp)
 })
+
+// ── Simulated audit log entries ───────────────────────────────────────────
+interface AuditEntry {
+  id: number
+  action: string
+  actor: string
+  target: string
+  timestamp: string
+  meta?: string
+}
+
+const auditLog = computed<AuditEntry[]>(() => {
+  if (!user.value) return []
+  return [
+    { id: 1, action: 'user.created', actor: 'System', target: user.value.email, timestamp: user.value.joined_at, meta: 'Invited via email' },
+    { id: 2, action: 'user.role_changed', actor: 'admin@acme.com', target: user.value.email, timestamp: user.value.joined_at, meta: `Role set to ${user.value.role}` },
+    { id: 3, action: 'user.login', actor: user.value.email, target: 'session', timestamp: user.value.last_active_at ?? user.value.joined_at },
+  ]
+})
 </script>
 
 <template>
@@ -172,6 +191,8 @@ const activity = computed(() => {
       <v-tabs v-model="activeTab" density="compact">
         <v-tab value="details">Details</v-tab>
         <v-tab value="permissions">Permissions</v-tab>
+        <v-tab value="activity">Activity</v-tab>
+        <v-tab value="audit">Audit Log</v-tab>
       </v-tabs>
     </template>
 
@@ -209,12 +230,66 @@ const activity = computed(() => {
 
       <!-- Permissions tab -->
       <v-window-item value="permissions">
-        <AppEmptyState
-          preset="permission"
-          title="Permission management coming soon"
-          description="Granular role-based permissions will be configurable here."
-          flat
-        />
+        <AppSection title="Role &amp; Access">
+          <AppCard>
+            <v-list density="comfortable" class="pa-0">
+              <v-list-item prepend-icon="mdi-shield-account-outline" title="Workspace role" :subtitle="user?.role ?? '—'" />
+              <v-divider inset />
+              <v-list-item prepend-icon="mdi-key-outline" title="Permissions" subtitle="Inherited from role" />
+            </v-list>
+          </AppCard>
+        </AppSection>
+        <AppSection title="Granted Permissions" class="mt-4">
+          <AppEmptyState
+            preset="onboarding"
+            title="No custom permissions"
+            description="This user inherits all permissions from their role. Individual overrides will appear here."
+            flat
+          />
+        </AppSection>
+      </v-window-item>
+
+      <!-- Activity tab -->
+      <v-window-item value="activity">
+        <AppSection title="Recent Activity">
+          <AppActivityTimeline :empty="activity.length === 0">
+            <AppTimelineItem
+              v-for="(event, idx) in activity"
+              :key="event.id"
+              :icon="event.icon"
+              :icon-color="event.iconColor"
+              :label="event.label"
+              :actor="event.actor"
+              :timestamp="event.timestamp"
+              :last="idx === activity.length - 1"
+            />
+          </AppActivityTimeline>
+        </AppSection>
+      </v-window-item>
+
+      <!-- Audit Log tab -->
+      <v-window-item value="audit">
+        <AppSection title="Audit Log" description="Full change history for compliance and debugging.">
+          <AppCard>
+            <v-list lines="two" density="comfortable" class="pa-0">
+              <template v-for="(entry, idx) in auditLog" :key="entry.id">
+                <v-list-item
+                  :prepend-icon="entry.action.includes('login') ? 'mdi-login' : entry.action.includes('created') ? 'mdi-account-plus-outline' : 'mdi-pencil-outline'"
+                  :title="entry.action"
+                  :subtitle="`${entry.actor} · ${entry.meta ?? ''}`"
+                >
+                  <template #append>
+                    <span class="text-caption text-medium-emphasis">
+                      {{ new Date(entry.timestamp).toLocaleDateString(undefined, { dateStyle: 'medium' }) }}
+                    </span>
+                  </template>
+                </v-list-item>
+                <v-divider v-if="idx < auditLog.length - 1" inset />
+              </template>
+            </v-list>
+          </AppCard>
+          <p class="text-caption text-medium-emphasis mt-3 text-center">Showing last {{ auditLog.length }} events. Full export available to administrators.</p>
+        </AppSection>
       </v-window-item>
     </v-window>
 

@@ -37,4 +37,22 @@ export const referenceRoutes: RouteRecordRaw[] = [
     component: () => import('../pages/UploadExamplePage.vue'),
     meta: { requiresAuth: true, requiresTenant: true },
   },
+  {
+    path: 'reference/onboarding',
+    name: 'reference-onboarding',
+    component: () => import('../pages/OnboardingWizardPage.vue'),
+    meta: { requiresAuth: true, requiresTenant: true },
+  },
+  {
+    path: 'reference/permissions',
+    name: 'reference-permissions',
+    component: () => import('../pages/PermissionsExamplePage.vue'),
+    meta: { requiresAuth: true, requiresTenant: true },
+  },
+  {
+    path: 'reference/empty-states',
+    name: 'reference-empty-states',
+    component: () => import('../pages/EmptyStatesExamplePage.vue'),
+    meta: { requiresAuth: true, requiresTenant: true },
+  },
 ]

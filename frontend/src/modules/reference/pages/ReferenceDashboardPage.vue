@@ -45,6 +45,27 @@ const examples: ExampleEntry[] = [
     color: 'info',
     routeName: 'reference-upload',
   },
+  {
+    title: 'Onboarding Wizard',
+    description: 'Multi-step wizard with per-step validation, progress persistence, and success state.',
+    icon: 'mdi-wizard-hat',
+    color: 'secondary',
+    routeName: 'reference-onboarding',
+  },
+  {
+    title: 'Permission Patterns',
+    description: 'Hidden, disabled, readonly, and locked workflow states driven by role.',
+    icon: 'mdi-shield-account-outline',
+    color: 'warning',
+    routeName: 'reference-permissions',
+  },
+  {
+    title: 'Empty States',
+    description: 'All official AppEmptyState presets and domain-specific variants with CTAs.',
+    icon: 'mdi-inbox-outline',
+    color: 'error',
+    routeName: 'reference-empty-states',
+  },
 ]
 </script>
 
