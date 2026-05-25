@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TextareaField } from '../../types'
 
-const props = defineProps<{
+defineProps<{
   field: TextareaField
   modelValue: string | undefined
   error?: string

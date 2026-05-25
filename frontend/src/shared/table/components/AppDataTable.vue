@@ -104,10 +104,6 @@ const headers = computed(() => {
   return cols
 })
 
-const pageCount = computed(() =>
-  props.perPage > 0 ? Math.ceil(props.total / props.perPage) : 1,
-)
-
 const isEmpty = computed(() => !props.loading && !props.error && props.rows.length === 0)
 
 function onSortUpdate(sortBy: Array<{ key: string; order: 'asc' | 'desc' }>): void {

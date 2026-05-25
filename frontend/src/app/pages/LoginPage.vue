@@ -10,7 +10,7 @@
 
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import axios from 'axios'
+import { isAxiosError } from '@/shared/api/client'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -32,7 +32,7 @@ async function handleSubmit(): Promise<void> {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
     await router.push(redirect ?? { name: 'home' })
   } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
+    if (isAxiosError(err)) {
       const status = err.response?.status
       if (status === 422) {
         // Validation error — surface the first field error.

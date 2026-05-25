@@ -14,7 +14,7 @@ import DateFieldConfig from './field-config/DateFieldConfig.vue'
 import OptionsFieldConfig from './field-config/OptionsFieldConfig.vue'
 import SimpleFieldConfig from './field-config/SimpleFieldConfig.vue'
 
-const props = defineProps<{
+defineProps<{
   field: FormField
 }>()
 

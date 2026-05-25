@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TextField } from '../../types'
 
-const props = defineProps<{
+defineProps<{
   field: TextField
   modelValue: string | undefined
   error?: string

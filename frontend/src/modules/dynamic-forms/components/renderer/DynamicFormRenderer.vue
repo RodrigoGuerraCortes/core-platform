@@ -6,7 +6,6 @@ import { buildZodSchema, mapZodErrors } from '../../validation/buildZodSchema'
 import { mapApiErrors, isGoneError, isConflictError } from '../../validation/mapApiErrors'
 import { useSubmitFormMutation } from '../../queries/useSubmitFormMutation'
 import DynamicFieldRenderer from './DynamicFieldRenderer.vue'
-import FormLoadingState from '../states/FormLoadingState.vue'
 import FormSuccessState from '../states/FormSuccessState.vue'
 import FormErrorState from '../states/FormErrorState.vue'
 

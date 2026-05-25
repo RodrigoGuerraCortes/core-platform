@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EmailField } from '../../types'
 
-const props = defineProps<{
+defineProps<{
   field: EmailField
   modelValue: string | undefined
   error?: string

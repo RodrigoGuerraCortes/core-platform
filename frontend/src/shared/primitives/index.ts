@@ -1,3 +1,8 @@
 export { default as AppButton } from './AppButton.vue'
 export { default as AppCard } from './AppCard.vue'
+export { default as AppSection } from './AppSection.vue'
+export { default as AppPageHeader } from './AppPageHeader.vue'
+export { default as AppConfirmDialog } from './AppConfirmDialog.vue'
+export { default as AppStatusChip } from './AppStatusChip.vue'
+export { default as AppToolbarActions } from './AppToolbarActions.vue'
 export type { AppButtonVariant } from './AppButton.vue'

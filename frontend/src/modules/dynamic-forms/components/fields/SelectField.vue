@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SelectField } from '../../types'
 
-const props = defineProps<{
+defineProps<{
   field: SelectField
   modelValue: string | null | undefined
   error?: string

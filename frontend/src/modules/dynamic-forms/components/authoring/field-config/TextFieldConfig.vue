@@ -2,7 +2,7 @@
 import type { TextField } from '../../../types'
 import BaseFieldConfig from './BaseFieldConfig.vue'
 
-const props = defineProps<{ field: TextField }>()
+defineProps<{ field: TextField }>()
 const emit = defineEmits<{ update: [patch: Partial<TextField>] }>()
 </script>
 

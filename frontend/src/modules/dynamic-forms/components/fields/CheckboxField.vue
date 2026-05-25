@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CheckboxField } from '../../types'
 
-const props = defineProps<{
+defineProps<{
   field: CheckboxField
   modelValue: boolean | undefined
   error?: string

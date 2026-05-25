@@ -2,7 +2,7 @@
 import type { DateField } from '../../../types'
 import BaseFieldConfig from './BaseFieldConfig.vue'
 
-const props = defineProps<{ field: DateField }>()
+defineProps<{ field: DateField }>()
 const emit = defineEmits<{ update: [patch: Partial<DateField>] }>()
 </script>
 

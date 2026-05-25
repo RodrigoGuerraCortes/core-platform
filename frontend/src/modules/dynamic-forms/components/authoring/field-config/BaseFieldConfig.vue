@@ -5,7 +5,7 @@
  */
 import type { FormField } from '../../../types'
 
-const props = defineProps<{
+defineProps<{
   field: FormField
   /** If true, the 'key' input is shown. Sections hide it. */
   showKey?: boolean

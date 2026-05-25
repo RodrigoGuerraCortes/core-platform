@@ -51,3 +51,11 @@ apiClient.interceptors.response.use(
 )
 
 export default apiClient
+
+/**
+ * isAxiosError — re-exported so app code never imports axios directly.
+ *
+ * Usage:
+ *   import { isAxiosError } from '@/shared/api/client'
+ */
+export const isAxiosError = axios.isAxiosError

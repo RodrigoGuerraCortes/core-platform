@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormField } from '../../types'
 
-const props = defineProps<{
+defineProps<{
   fields: FormField[]
   selectedKey: string | null
 }>()

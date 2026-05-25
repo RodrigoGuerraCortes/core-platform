@@ -5,7 +5,7 @@ import BaseFieldConfig from './BaseFieldConfig.vue'
 // Email, Checkbox, Section — no extra properties beyond base config.
 type SimpleField = EmailField | CheckboxField | SectionField
 
-const props = defineProps<{ field: SimpleField }>()
+defineProps<{ field: SimpleField }>()
 const emit = defineEmits<{ update: [patch: Partial<SimpleField>] }>()
 </script>
 

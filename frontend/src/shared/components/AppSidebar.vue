@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import { useTenantStore } from '@/stores/tenant'
 import { useNavigation } from '@/shared/composables/useNavigation'
 
-const props = defineProps<{
+defineProps<{
   modelValue: boolean
 }>()
 

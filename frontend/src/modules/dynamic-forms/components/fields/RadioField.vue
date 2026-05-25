@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RadioField } from '../../types'
 
-const props = defineProps<{
+defineProps<{
   field: RadioField
   modelValue: string | null | undefined
   error?: string

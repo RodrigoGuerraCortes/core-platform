@@ -16,7 +16,15 @@
  */
 
 // ── Primitives ──────────────────────────────────────────────────────────────
-export { AppButton, AppCard } from '../primitives'
+export {
+  AppButton,
+  AppCard,
+  AppSection,
+  AppPageHeader,
+  AppConfirmDialog,
+  AppStatusChip,
+  AppToolbarActions,
+} from '../primitives'
 export type { AppButtonVariant } from '../primitives'
 
 // ── Feedback ────────────────────────────────────────────────────────────────

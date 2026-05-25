@@ -2,7 +2,7 @@
 import type { NumberField } from '../../../types'
 import BaseFieldConfig from './BaseFieldConfig.vue'
 
-const props = defineProps<{ field: NumberField }>()
+defineProps<{ field: NumberField }>()
 const emit = defineEmits<{ update: [patch: Partial<NumberField>] }>()
 </script>
 
