@@ -67,13 +67,25 @@ const resolved = computed(() => VARIANT_MAP[props.variant])
 
 <template>
   <v-btn
+    v-if="icon && !$slots.default"
+    :color="resolved.color"
+    :variant="resolved.vuetifyVariant as any"
+    :loading="loading"
+    :disabled="disabled || loading"
+    :icon="icon"
+    :size="size"
+    :block="block"
+    :type="type"
+    @click="emit('click', $event)"
+  />
+  <v-btn
+    v-else
     :color="resolved.color"
     :variant="resolved.vuetifyVariant as any"
     :loading="loading"
     :disabled="disabled || loading"
     :prepend-icon="prependIcon"
     :append-icon="appendIcon"
-    :icon="icon"
     :size="size"
     :block="block"
     :type="type"

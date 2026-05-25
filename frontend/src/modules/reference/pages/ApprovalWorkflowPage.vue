@@ -14,10 +14,13 @@
  *   useUpdateApprovalStatusMutation() → approve/reject with comment
  */
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { AppPageLayout, AppButton, AppCard, AppTextarea } from '@/shared/ui'
 import { AppFilterBar } from '@/shared/table'
 import type { FilterField, FilterValues } from '@/shared/table'
 import { useReferenceApprovalsQuery, useUpdateApprovalStatusMutation } from '../composables'
+
+const router = useRouter()
 import type { ReferenceApproval, ApprovalStatus } from '../types'
 
 // ── Status filter ──────────────────────────────────────────────────────────
@@ -144,6 +147,14 @@ function formatDate(iso: string | null): string {
             <!-- Actions — only for pending items -->
             <div v-if="approval.status === 'pending'" class="d-flex gap-2 flex-shrink-0">
               <AppButton
+                variant="ghost"
+                size="small"
+                prepend-icon="mdi-eye-outline"
+                @click="router.push({ name: 'reference-approval-detail', params: { id: approval.id } })"
+              >
+                View
+              </AppButton>
+              <AppButton
                 variant="tonal"
                 size="small"
                 prepend-icon="mdi-check"
@@ -162,9 +173,19 @@ function formatDate(iso: string | null): string {
             </div>
 
             <!-- Resolved timestamp for non-pending -->
-            <div v-else class="text-caption text-medium-emphasis text-right flex-shrink-0">
-              <p>Resolved</p>
-              <p>{{ formatDate(approval.resolved_at) }}</p>
+            <div v-else class="d-flex gap-2 align-center flex-shrink-0">
+              <AppButton
+                variant="ghost"
+                size="small"
+                prepend-icon="mdi-eye-outline"
+                @click="router.push({ name: 'reference-approval-detail', params: { id: approval.id } })"
+              >
+                View
+              </AppButton>
+              <div class="text-caption text-medium-emphasis text-right">
+                <p>Resolved</p>
+                <p>{{ formatDate(approval.resolved_at) }}</p>
+              </div>
             </div>
           </div>
         </template>

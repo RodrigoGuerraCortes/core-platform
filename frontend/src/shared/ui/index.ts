@@ -24,6 +24,7 @@ export {
   AppConfirmDialog,
   AppStatusChip,
   AppToolbarActions,
+  AppPermissionBoundary,
 } from '../primitives'
 export type { AppButtonVariant } from '../primitives'
 
@@ -31,8 +32,15 @@ export type { AppButtonVariant } from '../primitives'
 export { AppLoadingState, AppEmptyState, AppErrorState } from '../feedback'
 
 // ── Layouts ─────────────────────────────────────────────────────────────────
-export { AppPageLayout } from '../layouts'
-export type { Breadcrumb } from '../layouts'
+export { AppPageLayout, AppDetailLayout } from '../layouts'
+export type { Breadcrumb, DetailBreadcrumb } from '../layouts'
 
 // ── Forms ───────────────────────────────────────────────────────────────────
 export { AppTextField, AppTextarea, AppSelect, AppCheckbox } from '../forms'
+
+// ── Entity ──────────────────────────────────────────────────────────────────
+export { AppEntityHeader, AppEntityMeta, AppEntityActions } from '../entity'
+export type { MetaItem } from '../entity'
+
+// ── Timeline ────────────────────────────────────────────────────────────────
+export { AppActivityTimeline, AppTimelineItem } from '../timeline'

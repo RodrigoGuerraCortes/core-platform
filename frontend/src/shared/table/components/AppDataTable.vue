@@ -152,37 +152,41 @@ function onSortUpdate(sortBy: Array<{ key: string; order: 'asc' | 'desc' }>): vo
 
     <!-- Data table -->
     <template v-else>
-      <v-data-table-server
-        :items="rows"
-        :headers="headers"
-        :items-length="total"
-        :page="page"
-        :items-per-page="perPage"
-        :items-per-page-options="PAGE_SIZE_OPTIONS.map((v) => ({ value: v, title: String(v) }))"
-        density="comfortable"
-        hover
-        @update:page="emit('update:page', $event)"
-        @update:items-per-page="emit('update:perPage', $event)"
-        @update:sort-by="onSortUpdate"
-      >
-        <!-- Forward all column slots so modules can customise cell rendering -->
-        <template
-          v-for="col in columns"
-          :key="col.key"
-          #[`item.${col.key}`]="slotProps"
+      <!-- overflow-x: auto lets the table scroll horizontally on narrow
+           viewports instead of overflowing the card boundary. -->
+      <div style="overflow-x: auto">
+        <v-data-table-server
+          :items="rows"
+          :headers="headers"
+          :items-length="total"
+          :page="page"
+          :items-per-page="perPage"
+          :items-per-page-options="PAGE_SIZE_OPTIONS.map((v) => ({ value: v, title: String(v) }))"
+          density="comfortable"
+          hover
+          @update:page="emit('update:page', $event)"
+          @update:items-per-page="emit('update:perPage', $event)"
+          @update:sort-by="onSortUpdate"
         >
-          <slot :name="`col-${col.key}`" v-bind="slotProps">
-            {{ slotProps.value }}
-          </slot>
-        </template>
+          <!-- Forward all column slots so modules can customise cell rendering -->
+          <template
+            v-for="col in columns"
+            :key="col.key"
+            #[`item.${col.key}`]="slotProps"
+          >
+            <slot :name="`col-${col.key}`" v-bind="slotProps">
+              {{ slotProps.value }}
+            </slot>
+          </template>
 
-        <!-- Row actions column -->
-        <template v-if="showActions" #[`item.actions`]="{ item }">
-          <div class="d-flex justify-end gap-1">
-            <slot name="actions" :row="item" />
-          </div>
-        </template>
-      </v-data-table-server>
+          <!-- Row actions column -->
+          <template v-if="showActions" #[`item.actions`]="{ item }">
+            <div class="d-flex justify-end gap-1">
+              <slot name="actions" :row="item" />
+            </div>
+          </template>
+        </v-data-table-server>
+      </div>
     </template>
   </v-card>
 </template>

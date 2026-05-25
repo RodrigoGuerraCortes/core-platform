@@ -164,6 +164,8 @@ export default tseslint.config(
                 '@/shared/feedback',
                 '@/shared/layouts',
                 '@/shared/forms',
+                '@/shared/entity',
+                '@/shared/timeline',
               ],
               message:
                 'Forbidden: Import only from @/shared/ui (the public surface), not from internal sub-paths.',
@@ -206,6 +208,8 @@ export default tseslint.config(
       'src/shared/layouts/**/*.vue',
       'src/shared/forms/**/*.vue',
       'src/shared/table/components/**/*.vue',
+      'src/shared/entity/**/*.vue',
+      'src/shared/timeline/**/*.vue',
     ],
     rules: {
       'no-restricted-syntax': 'off', // wrappers themselves use raw Vuetify

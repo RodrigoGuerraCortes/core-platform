@@ -35,7 +35,10 @@ const tenantStore = useTenantStore()
 const formId = computed(() => Number(route.params.formId))
 
 const { data: form, isLoading: formLoading, isError: formError } = useFormQuery(formId)
-const { data: versionsData } = useFormVersionsQuery(formId)
+const {
+  data: versionsData,
+  isLoading: versionsLoading,
+} = useFormVersionsQuery(formId)
 
 // ─── Draft schema initialisation ─────────────────────────────────────────────
 
@@ -45,10 +48,14 @@ const schemaInitialised = ref(false)
 // The working schema seed: latest version's schema, or empty.
 const latestVersion = computed(() => versionsData.value?.data[0] ?? null)
 
+// Watch BOTH query loading states. The two TanStack Query calls resolve
+// independently — if we only watch `formLoading` we may seed an empty schema
+// before `versionsData` has arrived, then block re-seeding via the
+// `schemaInitialised` guard (fields disappear on page refresh).
 watch(
-  [latestVersion, formLoading],
-  ([version, loading]) => {
-    if (loading || schemaInitialised.value) return
+  [latestVersion, formLoading, versionsLoading],
+  ([version, loading, vLoading]) => {
+    if (loading || vLoading || schemaInitialised.value) return
 
     if (version) {
       draft.reset(version.schema)

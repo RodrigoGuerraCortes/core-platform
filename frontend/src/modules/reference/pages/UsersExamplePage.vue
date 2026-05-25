@@ -11,11 +11,14 @@
  * Copy this pattern when implementing any new module index page.
  */
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { AppPageLayout, AppButton } from '@/shared/ui'
 import { AppDataTable, AppTableToolbar, AppFilterBar, useTableState } from '@/shared/table'
 import type { TableColumn, FilterField } from '@/shared/table'
 import { useReferenceUsersQuery, useDeleteUserMutation } from '../composables'
 import type { ReferenceUser, UserStatus } from '../types'
+
+const router = useRouter()
 
 // ── Table state (pagination + sort + filters) ─────────────────────────────
 const table = useTableState({
@@ -149,6 +152,13 @@ function formatDate(iso: string | null): string {
       <!-- Row actions -->
       <template #actions="{ row }">
         <AppButton
+          icon="mdi-eye-outline"
+          variant="ghost"
+          size="small"
+          :aria-label="`View ${row.name}`"
+          @click="router.push({ name: 'reference-user-detail', params: { id: row.id } })"
+        />
+        <AppButton
           icon="mdi-pencil-outline"
           variant="ghost"
           size="small"
@@ -159,7 +169,7 @@ function formatDate(iso: string | null): string {
           variant="ghost"
           size="small"
           :aria-label="`Delete ${row.name}`"
-          @click="confirmDelete(row as ReferenceUser)"
+          @click="confirmDelete(row as unknown as ReferenceUser)"
         />
       </template>
 

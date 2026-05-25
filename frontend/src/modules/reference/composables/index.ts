@@ -112,11 +112,50 @@ export function useUpdateApprovalStatusMutation() {
 /**
  * Dashboard summary metrics — counts and KPIs.
  */
+interface MetricCard {
+  label: string
+  value: number
+  icon: string
+  color: string
+  unit?: string
+  trend?: 'up' | 'down'
+  trendValue?: string
+}
+
 export function useDashboardMetricsQuery() {
   return useQuery({
     queryKey: ['reference', 'metrics'] as const,
     queryFn: fetchDashboardMetrics,
     staleTime: 60_000,
+    // Transform the flat API object into the card array the dashboard renders.
+    select: (raw): { cards: MetricCard[] } => ({
+      cards: [
+        {
+          label: 'Total Users',
+          value: raw.total_users,
+          icon: 'mdi-account-group',
+          color: 'primary',
+        },
+        {
+          label: 'Active Users',
+          value: raw.active_users,
+          icon: 'mdi-account-check',
+          color: 'success',
+        },
+        {
+          label: 'Pending Approvals',
+          value: raw.pending_approvals,
+          icon: 'mdi-clock-outline',
+          color: 'warning',
+        },
+        {
+          label: 'Forms Published',
+          value: raw.forms_published,
+          icon: 'mdi-file-check',
+          color: 'info',
+        },
+      ],
+    }),
   })
 }
 

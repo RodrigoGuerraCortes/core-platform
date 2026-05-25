@@ -41,5 +41,10 @@
     "vitest": "^3.2.2",
     "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^2.2.8"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

@@ -14,9 +14,21 @@ export const referenceRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, requiresTenant: true },
   },
   {
+    path: 'reference/users/:id',
+    name: 'reference-user-detail',
+    component: () => import('../pages/UserDetailPage.vue'),
+    meta: { requiresAuth: true, requiresTenant: true },
+  },
+  {
     path: 'reference/approvals',
     name: 'reference-approvals',
     component: () => import('../pages/ApprovalWorkflowPage.vue'),
+    meta: { requiresAuth: true, requiresTenant: true },
+  },
+  {
+    path: 'reference/approvals/:id',
+    name: 'reference-approval-detail',
+    component: () => import('../pages/ApprovalDetailPage.vue'),
     meta: { requiresAuth: true, requiresTenant: true },
   },
   {
