@@ -64,6 +64,11 @@ return [
         'Content-Type',
         'X-Requested-With',
         'X-Tenant-Id',
+        // Required for Sanctum SPA CSRF validation.
+        // Axios reads the XSRF-TOKEN cookie and sends it as this header.
+        // Without it, the CORS preflight blocks the header and Laravel
+        // receives no CSRF token, producing HTTP 419.
+        'X-XSRF-TOKEN',
     ],
 
     'exposed_headers' => [],
