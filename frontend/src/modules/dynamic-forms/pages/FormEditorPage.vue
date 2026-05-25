@@ -98,7 +98,7 @@ function onFieldRemoved(key: string): void {
 // ─── Save draft ───────────────────────────────────────────────────────────────
 
 const saveError = ref<string | null>(null)
-const { mutateAsync: createVersion, isPending: isSaving } = useCreateVersionMutation(formId.value)
+const { mutateAsync: createVersion, isPending: isSaving } = useCreateVersionMutation(formId)
 
 async function saveDraft(): Promise<boolean> {
   saveError.value = null
@@ -116,7 +116,7 @@ async function saveDraft(): Promise<boolean> {
 
 const publishError = ref<string | null>(null)
 const publishConfirmOpen = ref(false)
-const { mutateAsync: doPublish, isPending: isPublishing } = usePublishFormMutation(formId.value)
+const { mutateAsync: doPublish, isPending: isPublishing } = usePublishFormMutation(formId)
 
 async function handlePublish(): Promise<void> {
   publishError.value = null

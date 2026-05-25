@@ -2,6 +2,23 @@ import apiClient from '@/shared/api/client'
 import type { ApiResponse, PaginatedResponse } from '@/shared/types'
 import type { FormDetail, FormSchema, FormVersionDetail, FormSubmissionDetail } from '../types'
 
+// ─── Guards ───────────────────────────────────────────────────────────────────
+
+/**
+ * Asserts that a value intended to be a form ID is a finite number.
+ * Throws at runtime if a Ref object or other non-numeric value slips through.
+ * This guard exists because queryFn receives MaybeRef arguments — forgetting
+ * toValue() would silently serialise the ref as "[object Object]" in the URL.
+ */
+function assertNumericId(id: unknown, label = 'formId'): asserts id is number {
+  if (typeof id !== 'number' || !Number.isFinite(id)) {
+    throw new TypeError(
+      `[forms API] ${label} must be a finite number, got: ${JSON.stringify(id)} (${typeof id}). ` +
+        `Did you forget toValue() when unwrapping a MaybeRef?`,
+    )
+  }
+}
+
 // ─── Forms ────────────────────────────────────────────────────────────────────
 
 /** Fetch paginated list of forms for the current tenant. */
@@ -14,6 +31,7 @@ export async function fetchForms(page = 1): Promise<PaginatedResponse<FormDetail
 
 /** Fetch a single form. Includes active_version when available. */
 export async function fetchForm(formId: number): Promise<FormDetail> {
+  assertNumericId(formId)
   const { data } = await apiClient.get<ApiResponse<FormDetail>>(`/forms/${formId}`)
   return data.data
 }
@@ -33,6 +51,7 @@ export async function updateForm(
   formId: number,
   payload: { name?: string; description?: string | null },
 ): Promise<FormDetail> {
+  assertNumericId(formId)
   const { data } = await apiClient.patch<ApiResponse<FormDetail>>(`/forms/${formId}`, payload)
   return data.data
 }
@@ -43,6 +62,7 @@ export async function updateForm(
  * Throws 422 if the form has no versions or no renderable fields.
  */
 export async function publishForm(formId: number): Promise<FormDetail> {
+  assertNumericId(formId)
   const { data } = await apiClient.post<ApiResponse<FormDetail>>(`/forms/${formId}/publish`)
   return data.data
 }
@@ -51,6 +71,7 @@ export async function publishForm(formId: number): Promise<FormDetail> {
 
 /** Fetch all versions for a form (newest first). */
 export async function fetchFormVersions(formId: number): Promise<PaginatedResponse<FormVersionDetail>> {
+  assertNumericId(formId)
   const { data } = await apiClient.get<PaginatedResponse<FormVersionDetail>>(
     `/forms/${formId}/versions`,
   )
@@ -66,6 +87,7 @@ export async function createFormVersion(
   schema: FormSchema,
   label?: string,
 ): Promise<FormVersionDetail> {
+  assertNumericId(formId)
   const { data } = await apiClient.post<ApiResponse<FormVersionDetail>>(
     `/forms/${formId}/versions`,
     { schema, label: label ?? null },
@@ -80,6 +102,7 @@ export async function submitForm(
   formId: number,
   payload: Record<string, unknown>,
 ): Promise<FormSubmissionDetail> {
+  assertNumericId(formId)
   const { data } = await apiClient.post<ApiResponse<FormSubmissionDetail>>(
     `/forms/${formId}/submit`,
     { payload },

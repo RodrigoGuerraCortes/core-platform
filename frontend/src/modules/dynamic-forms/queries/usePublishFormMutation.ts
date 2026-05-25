@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { toValue, type MaybeRef } from 'vue'
 import { publishForm } from '../api/forms'
 
 /**
@@ -8,15 +9,19 @@ import { publishForm } from '../api/forms'
  *
  * On success, invalidates the form cache and the list (status changes draft→active).
  * Throws 422 if the form has no versions or no renderable fields.
+ *
+ * Accepts MaybeRef<number> so the caller can pass a ComputedRef from the route
+ * rather than snapshotting formId.value at setup time.
  */
-export function usePublishFormMutation(formId: number) {
+export function usePublishFormMutation(formId: MaybeRef<number>) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: () => publishForm(formId),
+    mutationFn: () => publishForm(toValue(formId)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forms', formId] })
-      queryClient.invalidateQueries({ queryKey: ['forms', formId, 'versions'] })
+      const id = toValue(formId)
+      queryClient.invalidateQueries({ queryKey: ['forms', id] })
+      queryClient.invalidateQueries({ queryKey: ['forms', id, 'versions'] })
       queryClient.invalidateQueries({ queryKey: ['forms', 'list'] })
     },
   })
