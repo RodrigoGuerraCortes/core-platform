@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/tenant'
 import { useFormsQuery } from '../queries/useFormsQuery'
+import { AppPageLayout, AppButton, AppEmptyState } from '@/shared/ui'
 import type { FormDetail } from '../types'
 
 const tenantStore = useTenantStore()
@@ -30,53 +31,32 @@ function navigateToFill(formId: number): void {
 </script>
 
 <template>
-  <div>
-    <div class="d-flex align-center justify-space-between mb-6">
-      <div>
-        <h1 class="text-h5 font-weight-bold">Forms</h1>
-        <p class="text-body-2 text-medium-emphasis mt-1">
-          Create and manage forms for this tenant.
-        </p>
-      </div>
-
-      <v-btn
-        prepend-icon="mdi-plus"
-        color="primary"
-        variant="flat"
-        @click="navigateToCreate"
-      >
+  <AppPageLayout
+    title="Forms"
+    description="Create and manage forms for this tenant."
+    :loading="isLoading"
+    :error="isError"
+    error-message="Could not load forms. Please refresh the page."
+  >
+    <template #actions>
+      <AppButton prepend-icon="mdi-plus" @click="navigateToCreate">
         New Form
-      </v-btn>
-    </div>
-
-    <!-- Loading -->
-    <div v-if="isLoading" class="d-flex flex-column gap-3">
-      <v-skeleton-loader v-for="n in 3" :key="n" type="list-item-two-line" />
-    </div>
-
-    <!-- Error -->
-    <v-alert v-else-if="isError" type="error" variant="tonal" rounded="lg">
-      Could not load forms. Please refresh the page.
-    </v-alert>
+      </AppButton>
+    </template>
 
     <!-- Empty state -->
-    <v-card v-else-if="forms.length === 0" variant="outlined" rounded="lg">
-      <v-card-text class="text-center py-12">
-        <v-icon icon="mdi-file-document-multiple-outline" size="48" color="medium-emphasis" class="mb-4" />
-        <p class="text-h6 font-weight-medium mb-2">No forms yet</p>
-        <p class="text-body-2 text-medium-emphasis mb-6">
-          Create your first form to get started.
-        </p>
-        <v-btn
-          variant="flat"
-          color="primary"
-          prepend-icon="mdi-plus"
-          @click="navigateToCreate"
-        >
+    <AppEmptyState
+      v-if="forms.length === 0"
+      icon="mdi-file-document-multiple-outline"
+      title="No forms yet"
+      description="Create your first form to get started."
+    >
+      <template #action>
+        <AppButton prepend-icon="mdi-plus" @click="navigateToCreate">
           Create Form
-        </v-btn>
-      </v-card-text>
-    </v-card>
+        </AppButton>
+      </template>
+    </AppEmptyState>
 
     <!-- Forms list -->
     <v-card v-else variant="outlined" rounded="lg">
@@ -93,20 +73,19 @@ function navigateToFill(formId: number): void {
                 <v-chip :color="statusColor(form.status)" size="small" variant="tonal">
                   {{ form.status }}
                 </v-chip>
-                <v-btn
+                <AppButton
                   icon="mdi-pencil-outline"
+                  variant="ghost"
                   size="small"
-                  variant="text"
-                  title="Edit"
+                  :aria-label="`Edit ${form.name}`"
                   @click="navigateToEditor(form.id)"
                 />
-                <v-btn
+                <AppButton
                   v-if="form.status === 'active'"
                   icon="mdi-play-circle-outline"
+                  variant="ghost"
                   size="small"
-                  variant="text"
-                  color="primary"
-                  title="Fill form"
+                  :aria-label="`Fill ${form.name}`"
                   @click="navigateToFill(form.id)"
                 />
               </div>
@@ -116,5 +95,5 @@ function navigateToFill(formId: number): void {
         </template>
       </v-list>
     </v-card>
-  </div>
+  </AppPageLayout>
 </template>

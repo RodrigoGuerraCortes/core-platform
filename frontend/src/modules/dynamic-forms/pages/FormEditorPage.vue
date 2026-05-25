@@ -22,10 +22,11 @@ import { useFormVersionsQuery } from '../queries/useFormVersionsQuery'
 import { useCreateVersionMutation } from '../queries/useCreateVersionMutation'
 import { usePublishFormMutation } from '../queries/usePublishFormMutation'
 import { useDraftSchema } from '../composables/useDraftSchema'
+import { AppButton, AppLoadingState, AppErrorState } from '@/shared/ui'
 import FieldList from '../components/authoring/FieldList.vue'
 import AddFieldMenu from '../components/authoring/AddFieldMenu.vue'
 import FieldConfigPanel from '../components/authoring/FieldConfigPanel.vue'
-import type { FormField, FormSchema } from '../types'
+import type { FormField } from '../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -158,21 +159,23 @@ const isPublished = computed(() => form.value?.status === 'active')
 <template>
   <div>
     <!-- Loading -->
-    <div v-if="formLoading" class="d-flex flex-column gap-3">
-      <v-skeleton-loader type="heading" />
-      <v-skeleton-loader type="article" />
-    </div>
+    <AppLoadingState v-if="formLoading" :rows="2" type="heading" />
 
     <!-- Error -->
-    <v-alert v-else-if="formError" type="error" variant="tonal" rounded="lg">
-      Could not load form. <a href="#" @click.prevent="goToList">Go back</a>
-    </v-alert>
+    <AppErrorState
+      v-else-if="formError"
+      message="Could not load form."
+    >
+      <template #action>
+        <AppButton variant="ghost" size="small" @click="goToList">Go back</AppButton>
+      </template>
+    </AppErrorState>
 
     <!-- Editor -->
     <div v-else-if="form">
       <!-- Toolbar -->
       <div class="d-flex align-center gap-3 mb-6 flex-wrap">
-        <v-btn icon="mdi-arrow-left" variant="text" size="small" @click="goToList" />
+        <AppButton variant="ghost" icon="mdi-arrow-left" size="small" aria-label="Back to forms list" @click="goToList" />
 
         <div class="flex-grow-1">
           <div class="d-flex align-center gap-2">
@@ -195,7 +198,7 @@ const isPublished = computed(() => form.value?.status === 'active')
         </div>
 
         <div class="d-flex gap-2">
-          <v-btn
+          <AppButton
             variant="tonal"
             prepend-icon="mdi-eye-outline"
             size="small"
@@ -203,9 +206,9 @@ const isPublished = computed(() => form.value?.status === 'active')
             @click="goToPreview"
           >
             Preview
-          </v-btn>
+          </AppButton>
 
-          <v-btn
+          <AppButton
             variant="tonal"
             prepend-icon="mdi-content-save-outline"
             size="small"
@@ -214,12 +217,11 @@ const isPublished = computed(() => form.value?.status === 'active')
             @click="saveDraft"
           >
             Save Draft
-          </v-btn>
+          </AppButton>
 
-          <v-btn
+          <AppButton
             v-if="!isPublished"
-            color="primary"
-            variant="flat"
+            variant="primary"
             prepend-icon="mdi-publish"
             size="small"
             :loading="isPublishing"
@@ -227,7 +229,7 @@ const isPublished = computed(() => form.value?.status === 'active')
             @click="publishConfirmOpen = true"
           >
             Publish
-          </v-btn>
+          </AppButton>
 
           <v-chip v-else color="success" prepend-icon="mdi-check-circle" variant="flat" size="small">
             Published
@@ -301,10 +303,10 @@ const isPublished = computed(() => form.value?.status === 'active')
         </v-card-text>
         <v-card-actions class="pa-4 gap-2">
           <v-spacer />
-          <v-btn variant="text" @click="publishConfirmOpen = false">Cancel</v-btn>
-          <v-btn color="primary" variant="flat" :loading="isPublishing" @click="handlePublish">
+          <AppButton variant="ghost" @click="publishConfirmOpen = false">Cancel</AppButton>
+          <AppButton variant="primary" :loading="isPublishing" @click="handlePublish">
             Publish
-          </v-btn>
+          </AppButton>
         </v-card-actions>
       </v-card>
     </v-dialog>
