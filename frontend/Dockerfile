@@ -15,7 +15,7 @@ WORKDIR /app
 # The actual source is mounted at runtime, so the COPY below is a
 # fallback for the image-level install step only.
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source into the image (overridden by volume mount in compose).
 COPY . .
