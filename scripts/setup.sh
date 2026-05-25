@@ -51,7 +51,7 @@ fi
 log "Setting up frontend..."
 # Install on the host so editors, TypeScript, and test runners work without Docker.
 cd frontend
-npm install
+npm install --legacy-peer-deps
 cd ..
 # The frontend container starts automatically via docker compose (see step 2 above).
 # Its own npm install runs during `docker compose build` inside the container.

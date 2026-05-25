@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Shared\Http\Middleware\InjectRequestId;
+use App\Core\Shared\Http\Middleware\PushLogContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // ─── Global middleware (applied to every request) ─────────────────────
+        // Order matters: InjectRequestId must run before PushLogContext.
+        $middleware->prepend(InjectRequestId::class);
+        $middleware->append(PushLogContext::class);
+
         // Enable session-based authentication for Sanctum SPA on stateful domains.
         // Adds EnsureFrontendRequestsAreStateful to the api middleware group so
         // the session cookie is read on /api/* routes for configured origins.
