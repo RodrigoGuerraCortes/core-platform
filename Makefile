@@ -2,7 +2,7 @@
 # Core Platform — Makefile
 # ------------------------------------------------------------------
 
-.PHONY: setup dev test lint migrate seed fresh artisan fix-permissions
+.PHONY: setup dev test lint migrate seed fresh artisan fix-permissions bootstrap-check
 
 setup:
 	@bash scripts/setup.sh
@@ -33,6 +33,9 @@ seed:
 
 fresh:
 	docker compose exec -u www-data app php artisan migrate:fresh --seed
+
+bootstrap-check:
+	docker compose exec -u www-data app php artisan platform:check-bootstrap
 
 # ── Runtime permission repair ───────────────────────────────────────
 # Fixes ownership of Laravel runtime directories in the running

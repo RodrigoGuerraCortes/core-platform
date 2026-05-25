@@ -57,8 +57,13 @@ cd ..
 # Its own npm install runs during `docker compose build` inside the container.
 
 # ---- 4. Migrations & seeders (inside container) ----
-docker compose exec -T app php artisan migrate --force
-docker compose exec -T app php artisan db:seed --force
+docker compose exec -T -u www-data app php artisan migrate --force
+docker compose exec -T -u www-data app php artisan db:seed --force
+
+# Validate that required bootstrap data exists (tenant, memberships)
+docker compose exec -T -u www-data app php artisan platform:check-bootstrap || {
+    log "WARNING: Bootstrap check failed. Run 'make fresh' to reset dev state."
+}
 
 # ---- 5. Storage symlink (inside container) ----
 docker compose exec -T app php artisan storage:link --force 2>/dev/null || true
