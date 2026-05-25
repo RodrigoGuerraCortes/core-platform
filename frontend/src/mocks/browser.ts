@@ -18,6 +18,7 @@ import { setupWorker } from 'msw/browser'
 import { http, HttpResponse } from 'msw'
 import { referenceHandlers } from '@/modules/reference/mocks/handlers'
 import { handlers as formsHandlers } from '@/modules/dynamic-forms/tests/mocks/handlers'
+import { condoflowHandlers } from '@/modules/condoflow/mocks/handlers'
 
 // ─── Dev auth handlers ────────────────────────────────────────────────────────
 // Provide a pre-authenticated user so you can navigate the app without a
@@ -34,13 +35,23 @@ const mockDevUser = {
 const devAuthHandlers = [
   http.get('/sanctum/csrf-cookie', () => new HttpResponse(null, { status: 204 })),
 
-  http.get('/api/auth/me', () => HttpResponse.json({ data: mockDevUser })),
+  http.get('/api/auth/me', () => {
+    // Respect "logged out" state so guest pages (e.g. /condoflow/login) can render.
+    if (localStorage.getItem('msw:logged-out') === 'true') {
+      return HttpResponse.json({ message: 'Unauthenticated.' }, { status: 401 })
+    }
+    return HttpResponse.json({ data: mockDevUser })
+  }),
 
-  http.post('/api/auth/login', () => HttpResponse.json({ data: mockDevUser })),
+  http.post('/api/auth/login', () => {
+    localStorage.removeItem('msw:logged-out')
+    return HttpResponse.json({ data: mockDevUser })
+  }),
 
-  http.post('/api/auth/logout', () =>
-    HttpResponse.json({ message: 'Logged out successfully.' }),
-  ),
+  http.post('/api/auth/logout', () => {
+    localStorage.setItem('msw:logged-out', 'true')
+    return HttpResponse.json({ message: 'Logged out successfully.' })
+  }),
 ]
 
 // ─── Worker ───────────────────────────────────────────────────────────────────
@@ -49,4 +60,5 @@ export const worker = setupWorker(
   ...devAuthHandlers,
   ...referenceHandlers,
   ...formsHandlers,
+  ...condoflowHandlers,
 )

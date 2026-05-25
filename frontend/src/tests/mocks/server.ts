@@ -13,6 +13,7 @@ import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
 import { handlers as formsHandlers } from '@/modules/dynamic-forms/tests/mocks/handlers'
 import { referenceHandlers } from '@/modules/reference/mocks/handlers'
+import { condoflowHandlers } from '@/modules/condoflow/mocks/handlers'
 
 // ─── Canonical mock user ──────────────────────────────────────────────────────
 // Exported so tests can reference the expected shape without duplicating it.
@@ -53,4 +54,4 @@ const authHandlers = [
 
 // ─── Server ───────────────────────────────────────────────────────────────────
 
-export const server = setupServer(...authHandlers, ...formsHandlers, ...referenceHandlers)
+export const server = setupServer(...authHandlers, ...formsHandlers, ...referenceHandlers, ...condoflowHandlers)

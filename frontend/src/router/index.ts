@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { dynamicFormsRoutes } from '@/modules/dynamic-forms/routes'
+import { condoflowRoutes, condoflowPublicRoutes } from '@/modules/condoflow/routes'
 import { referenceRoutes } from '@/modules/reference/routes'
 import { useAuthStore } from '@/stores/auth'
+import { resolveExperience, getGuestEntryRoute, getAuthenticatedEntryRoute } from '@/app/experiences'
 
 /**
  * Route records are registered here at the top level.
@@ -30,6 +32,7 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, requiresTenant: true },
       },
       ...dynamicFormsRoutes,
+      ...condoflowRoutes,
       ...referenceRoutes,
       // Additional module routes are added here as modules are built.
     ],
@@ -59,6 +62,9 @@ const routes: RouteRecordRaw[] = [
     name: 'not-found',
     component: () => import('@/app/pages/NotFoundPage.vue'),
   },
+
+  // ─── CondoFlow independent login ────────────────────────────────────────────
+  ...condoflowPublicRoutes,
 ]
 
 const router = createRouter({
@@ -70,19 +76,32 @@ const router = createRouter({
 })
 
 // ─── Navigation guard ─────────────────────────────────────────────────────────
-// bootstrapCurrentUser() in main.ts awaits completion before app.use(router),
-// so isBootstrapping will always be false when this guard first runs.
+// Experience-aware auth redirects. The guard resolves which experience owns
+// the target route and redirects to the appropriate entry point.
+// NO hardcoded vertical names — only the experience layer.
 
 router.beforeEach((to) => {
   const authStore = useAuthStore()
+  const resolved = resolveExperience(to)
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // Preserve the intended destination so LoginPage can redirect back.
+    // Guest hitting a protected route → redirect to owning experience's login.
+    if (resolved) {
+      const guestEntry = getGuestEntryRoute(resolved.experience)
+      return { path: guestEntry, query: { redirect: to.fullPath } }
+    }
+    // Platform core → default login
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
-    // Already authenticated — send to the home page (tenant selection next).
+    // Authenticated user hitting a guest-only route → redirect to owning experience's dashboard.
+    if (resolved) {
+      const tenantSlug = (to.params as Record<string, string>).tenantSlug ?? 'default'
+      const authEntry = getAuthenticatedEntryRoute(resolved.experience, { tenantSlug })
+      return { path: authEntry }
+    }
+    // Platform core → home
     return { name: 'home' }
   }
 })
