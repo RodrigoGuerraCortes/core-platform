@@ -1,55 +1,6 @@
 services:
 
-  app:
-    build:
-      context: .
-      dockerfile: infra/docker/backend/Dockerfile
-    container_name: core-platform-app
-    working_dir: /var/www/html
-    volumes:
-      - ./backend:/var/www/html
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - core-network
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    container_name: core-platform-nginx
-    ports:
-      - "8010:80"
-    volumes:
-      - ./backend:/var/www/html
-      - ./infra/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - app
-    networks:
-      - core-network
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: core-platform-frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      # Isolated node_modules inside the container — prevents the host
-      # directory from shadowing the container-installed packages.
-      - /app/node_modules
-    environment:
-      # Vite proxy target — routes /api calls to nginx inside Docker.
-      # Override on the host (outside Docker) via shell env if needed.
-      - BACKEND_URL=http://nginx:80
-    depends_on:
-      - nginx
-    networks:
-      - core-network
-    restart: unless-stopped
+  # ── Infrastructure ────────────────────────────────────────────────────────────
 
   postgres:
     image: postgres:16-alpine
@@ -65,12 +16,92 @@ services:
     networks:
       - core-network
     restart: unless-stopped
+    healthcheck:
+      # pg_isready returns 0 only when the server is accepting connections
+      # on the target database — not just when the process is running.
+      test: ["CMD-SHELL", "pg_isready -U app -d core_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
     container_name: core-platform-redis
     ports:
       - "6380:6379"
+    networks:
+      - core-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # ── Application ───────────────────────────────────────────────────────────────
+
+  app:
+    build:
+      context: .
+      dockerfile: infra/docker/backend/Dockerfile
+    container_name: core-platform-app
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - core-network
+    restart: unless-stopped
+    # Healthcheck defined in Dockerfile (nc -z 127.0.0.1 9000).
+    # docker-compose inherits it automatically; no override needed.
+
+  nginx:
+    image: nginx:alpine
+    container_name: core-platform-nginx
+    ports:
+      - "8010:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./infra/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      app:
+        # Wait until php-fpm is accepting FastCGI connections before nginx
+        # starts routing traffic — eliminates the 502 race condition.
+        condition: service_healthy
+    networks:
+      - core-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: core-platform-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Isolated node_modules inside the container — prevents the host
+      # directory from shadowing the container-installed packages.
+      - /app/node_modules
+    environment:
+      # Vite proxy target — routes /api calls to nginx inside Docker.
+      - BACKEND_URL=http://nginx:80
+    depends_on:
+      nginx:
+        condition: service_healthy
     networks:
       - core-network
     restart: unless-stopped

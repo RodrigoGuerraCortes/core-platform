@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------
 # Core Platform — Backend Dockerfile
 #
-# PHP-FPM container for Laravel application.
+# PHP-FPM container for Laravel / Filament application.
 #
 # Runtime ownership strategy:
 #   PHP-FPM pool runs as www-data (uid=33). Application files are
@@ -13,29 +13,60 @@
 
 FROM php:8.3-fpm
 
-RUN apt-get update && apt-get install -y \
+# ── System dependencies ───────────────────────────────────────────
+# libgd-dev   → gd (image processing, required by Filament)
+# libpq-dev   → pdo_pgsql, pgsql
+# libzip-dev  → zip
+# libicu-dev  → intl (locale / money formatting)
+# netcat-openbsd → nc, used in the container HEALTHCHECK
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgd-dev \
     libpq-dev \
     libzip-dev \
     libicu-dev \
+    netcat-openbsd \
     unzip \
     git \
-    && docker-php-ext-install pdo pdo_pgsql zip intl \
     && rm -rf /var/lib/apt/lists/*
 
-# /tmp is used by PHP's tempnam() as a last resort. Ensure it is
-# world-writable with sticky bit so every process can create temp
-# files without collisions.
-RUN mkdir -p /tmp && chmod 1777 /tmp
+# ── PHP extensions (compiled) ─────────────────────────────────────
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        gd \
+        intl \
+        opcache \
+        pcntl \
+        pdo \
+        pdo_pgsql \
+        pgsql \
+        zip
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# ── PHP extensions (PECL) ─────────────────────────────────────────
+RUN pecl install redis \
+    && docker-php-ext-enable redis \
+    && rm -rf /tmp/pear
+
+# ── PHP runtime configuration ─────────────────────────────────────
+COPY infra/docker/backend/php/opcache.ini /usr/local/etc/php/conf.d/99-opcache.ini
+COPY infra/docker/backend/php/app.ini     /usr/local/etc/php/conf.d/99-app.ini
+
+# /tmp needs sticky bit so every process can create temp files.
+RUN chmod 1777 /tmp
+
+# ── Composer ──────────────────────────────────────────────────────
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Entrypoint fixes runtime directory ownership before PHP-FPM starts.
-# This ensures www-data can write regardless of how files arrived
-# (host mount, docker cp, artisan run as root, etc.).
+# ── Entrypoint ────────────────────────────────────────────────────
 COPY infra/docker/backend/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# ── Healthcheck ───────────────────────────────────────────────────
+# Verify php-fpm is accepting FastCGI connections on port 9000.
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 --start-period=30s \
+    CMD nc -z 127.0.0.1 9000 || exit 1
 
 EXPOSE 9000
 
