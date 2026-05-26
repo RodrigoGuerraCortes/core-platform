@@ -28,7 +28,7 @@ import { handlers as formsHandlers } from '@/modules/dynamic-forms/tests/mocks/h
 // so handlers are irrelevant. This guard prevents accidental handler
 // registration even if the module is imported elsewhere.
 const runtimeMode: string =
-  import.meta.env.VITE_RUNTIME_MODE ?? 'cookbook'
+  import.meta.env.VITE_RUNTIME_MODE ?? 'vertical'
 
 // ─── Dev auth handlers ────────────────────────────────────────────────────────
 // Experience-aware mock users. Switch via localStorage 'msw:experience'.

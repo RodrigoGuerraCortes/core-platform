@@ -45,12 +45,25 @@ After removing runtime MSW for a module:
 
 ## How It Works in Development
 
-1. `main.ts` detects `import.meta.env.DEV === true`
+> ⚠️ The MSW browser worker **only** starts when `VITE_RUNTIME_MODE=cookbook`.
+> The platform defaults to `vertical` — MSW never activates unless explicitly opted in.
+
+### Cookbook mode (`VITE_RUNTIME_MODE=cookbook`)
+
+1. `main.ts` detects `import.meta.env.DEV === true` AND `runtimeMode === 'cookbook'`
 2. Dynamically imports `src/mocks/browser.ts`
 3. Calls `worker.start({ onUnhandledRequest: 'bypass' })`
 4. MSW registers a Service Worker (`public/mockServiceWorker.js`)
 5. All `fetch()` calls made by `apiClient` are intercepted by the registered handlers
 6. Requests with no matching handler fall through to the Vite proxy (→ Laravel)
+
+### Vertical mode (default)
+
+1. `main.ts` detects `import.meta.env.DEV === true` AND `runtimeMode !== 'cookbook'`
+2. Checks for any existing service worker registrations (stale from previous cookbook session)
+3. If found: unregisters all, clears MSW localStorage key, reloads the page once
+4. On clean reload: no service worker exists, bootstrap proceeds directly
+5. All `/api/*` requests go through Vite proxy → Laravel with no interception
 
 ---
 

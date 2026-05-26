@@ -13,7 +13,11 @@ There is no ambiguity — if a mode does not explicitly allow a behavior, it is 
 
 ---
 
-## Mode 1: `cookbook`
+## Mode 1: `cookbook` (explicit opt-in)
+
+> ⚠️ **This mode is NOT the default.** Developers must explicitly set
+> `VITE_RUNTIME_MODE=cookbook` in their `.env` to activate it.
+> The platform defaults to `vertical` to ensure all requests reach the real backend.
 
 **Purpose:** Frontend-only demo/sandbox for UI patterns and reference implementations.
 
@@ -38,7 +42,11 @@ There is no ambiguity — if a mode does not explicitly allow a behavior, it is 
 
 ---
 
-## Mode 2: `vertical-runtime`
+## Mode 2: `vertical-runtime` (DEFAULT)
+
+> ✅ **This is the default runtime mode.** When `VITE_RUNTIME_MODE` is unset or set
+> to `vertical`, the MSW browser worker is NEVER started and all `/api/*` requests
+> flow through the Vite proxy directly to Laravel.
 
 **Purpose:** Real business vertical operating against Laravel + PostgreSQL with tenant-scoped data.
 
@@ -159,3 +167,18 @@ There is no ambiguity — if a mode does not explicitly allow a behavior, it is 
 - Production builds MUST tree-shake all MSW code
 - Backend tests (`phpunit`/`pest`) run in `tests` mode with SQLite or test PostgreSQL
 - Frontend tests (`vitest`) run in `tests` mode with MSW node server
+- Runtime default MUST be `vertical` — CI fails if fallback is `cookbook`
+- `.env.example` MUST contain `VITE_RUNTIME_MODE=vertical`
+
+## Stale Service Worker Cleanup
+
+When switching from `cookbook` to `vertical` mode (or on first load in vertical mode),
+`main.ts` checks for any existing service worker registrations. If found:
+
+1. All registrations are unregistered via `navigator.serviceWorker.getRegistrations()`
+2. `localStorage` MSW version key is cleared
+3. Page reloads once to fully release SW control
+4. On the second load, no SW exists and bootstrap proceeds normally
+
+This ensures a developer who previously ran in `cookbook` mode will have a clean
+vertical runtime after a single automatic reload.

@@ -70,9 +70,12 @@ For any business vertical in `vertical-runtime` mode:
 
 ## When MSW Is Allowed
 
+> The platform defaults to `vertical` runtime. MSW browser interception only
+> activates when `VITE_RUNTIME_MODE=cookbook` is explicitly set.
+
 | Context | Allowed |
 |---------|:-------:|
-| Runtime browser — Reference module | ✅ |
+| Runtime browser — Reference module (cookbook mode) | ✅ |
 | Runtime browser — Business vertical | ❌ |
 | Vitest (any module) | ✅ |
 | E2E tests | ❌ |

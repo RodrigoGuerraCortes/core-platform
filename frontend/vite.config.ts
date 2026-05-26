@@ -23,7 +23,7 @@ export default defineConfig({
     //   'cookbook' → MSW intercepts Reference & Forms APIs
     //   'vertical' → all requests go to the real Laravel backend
     'import.meta.env.VITE_RUNTIME_MODE': JSON.stringify(
-      process.env.VITE_RUNTIME_MODE ?? 'cookbook',
+      process.env.VITE_RUNTIME_MODE ?? 'vertical',
     ),
   },
 
