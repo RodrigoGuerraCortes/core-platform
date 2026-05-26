@@ -22,6 +22,14 @@ import { http, HttpResponse } from 'msw'
 import { referenceHandlers } from '@/modules/reference/mocks/handlers'
 import { handlers as formsHandlers } from '@/modules/dynamic-forms/tests/mocks/handlers'
 
+// ─── Runtime mode ─────────────────────────────────────────────────────────────
+// Only register handlers when the runtime mode is 'cookbook'.
+// For 'vertical' mode (CondoFlow etc.) the worker is never started,
+// so handlers are irrelevant. This guard prevents accidental handler
+// registration even if the module is imported elsewhere.
+const runtimeMode: string =
+  import.meta.env.VITE_RUNTIME_MODE ?? 'cookbook'
+
 // ─── Dev auth handlers ────────────────────────────────────────────────────────
 // Experience-aware mock users. Switch via localStorage 'msw:experience'.
 // Supports: 'platform' (default), 'condoflow', 'his' (future).
@@ -94,9 +102,12 @@ const devAuthHandlers = [
 ]
 
 // ─── Worker ───────────────────────────────────────────────────────────────────
+// Only create the worker with handlers when runtime mode is 'cookbook'.
+// For 'vertical' mode the worker is never started (see main.ts), so we
+// still export a worker instance but with an empty handler list.
+const activeHandlers =
+  runtimeMode === 'cookbook'
+    ? [...devAuthHandlers, ...referenceHandlers, ...formsHandlers]
+    : []
 
-export const worker = setupWorker(
-  ...devAuthHandlers,
-  ...referenceHandlers,
-  ...formsHandlers,
-)
+export const worker = setupWorker(...activeHandlers)

@@ -20,31 +20,44 @@ import { useAuthStore } from './stores/auth'
  *  5. Mount — render after everything is ready.
  */
 async function bootstrap(): Promise<void> {
+  // ── Runtime mode ─────────────────────────────────────────────────────────
+  // 'cookbook'  → uses MSW/browser for Reference & Forms modules
+  // 'vertical'  → uses real Laravel backend via Vite proxy (CondoFlow, etc.)
+  const runtimeMode: string =
+    import.meta.env.VITE_RUNTIME_MODE ?? 'cookbook'
+
   // ── Dev-only MSW browser worker ──────────────────────────────────────────
   // Intercepts /api/* requests for demo modules (Reference, Forms).
   // Business verticals (CondoFlow) use the real Laravel backend via Vite proxy.
   // onUnhandledRequest: 'bypass' lets real requests pass through to Laravel.
   if (import.meta.env.DEV) {
-    // Force service worker update on code changes
-    const MSW_VERSION = '2026-05-25-gov3'
-    const storedVersion = localStorage.getItem('msw:version')
-    
-    if (storedVersion !== MSW_VERSION) {
-      console.log('[MSW] Code version changed - unregistering old service worker')
+    if (runtimeMode === 'cookbook') {
+      // Force service worker update on code changes
+      const MSW_VERSION = '2026-05-25-gov3'
+      const storedVersion = localStorage.getItem('msw:version')
+      
+      if (storedVersion !== MSW_VERSION) {
+        console.log('[MSW] Code version changed - unregistering old service worker')
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(registrations.map(r => r.unregister()))
+        localStorage.setItem('msw:version', MSW_VERSION)
+        console.log('[MSW] Service worker cleared. Reloading...')
+        globalThis.location.reload()
+        return
+      }
+
+      const { worker } = await import('./mocks/browser')
+      await worker.start({
+        onUnhandledRequest: 'bypass',
+        serviceWorker: { options: { updateViaCache: 'none' } },
+      })
+      console.log('[MSW] Worker started - intercepting Reference and Forms APIs only')
+    } else {
+      // Vertical runtime – ensure no stale MSW service worker is active
+      console.log('[Runtime] Vertical mode – unregistering any MSW service worker')
       const registrations = await navigator.serviceWorker.getRegistrations()
       await Promise.all(registrations.map(r => r.unregister()))
-      localStorage.setItem('msw:version', MSW_VERSION)
-      console.log('[MSW] Service worker cleared. Reloading...')
-      globalThis.location.reload()
-      return
     }
-
-    const { worker } = await import('./mocks/browser')
-    await worker.start({
-      onUnhandledRequest: 'bypass',
-      serviceWorker: { options: { updateViaCache: 'none' } },
-    })
-    console.log('[MSW] Worker started - intercepting Reference and Forms APIs only')
   }
   const app = createApp(App)
 
