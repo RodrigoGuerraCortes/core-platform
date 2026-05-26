@@ -23,12 +23,14 @@ If you are an AI agent working on this codebase: **read this entire directory be
 | [Runtime Modes](./runtime-modes.md) | The 5 official runtime modes and what each allows |
 | [Data Source Governance](./data-source-governance.md) | What data sources are legal per module and mode |
 | [MSW Browser Worker](./frontend/msw-browser-worker.md) | Runtime vs test-only MSW rules |
+| [Runtime Audit (GOV-2)](./runtime-audit-gov2.md) | Complete audit of current runtime state |
 
 ### Ownership & Boundaries
 
 | Document | Purpose |
 |----------|---------|
 | [Ownership Matrix](./ownership-matrix.md) | Who owns what — data, APIs, navigation, state |
+| [CondoFlow Runtime Rules](./condoflow-runtime-rules.md) | CondoFlow-specific runtime governance |
 
 ### Frontend Governance
 
@@ -36,6 +38,7 @@ If you are an AI agent working on this codebase: **read this entire directory be
 |----------|----------|
 | [Component Standards](./frontend/) | UI component rules, slot conventions, imports |
 | [MSW Browser Worker](./frontend/msw-browser-worker.md) | Service worker governance |
+| [Experience Isolation](./frontend/experience-isolation.md) | How vertical experiences remain isolated |
 
 ### Architecture (in `docs/architecture/`)
 
