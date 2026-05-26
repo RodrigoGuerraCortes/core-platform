@@ -24,6 +24,7 @@ If you are an AI agent working on this codebase: **read this entire directory be
 | [Data Source Governance](./data-source-governance.md) | What data sources are legal per module and mode |
 | [MSW Browser Worker](./frontend/msw-browser-worker.md) | Runtime vs test-only MSW rules |
 | [Runtime Audit (GOV-2)](./runtime-audit-gov2.md) | Complete audit of current runtime state |
+| [CI Enforcement](./ci-enforcement.md) | Automated governance enforcement via GitHub Actions |
 
 ### Ownership & Boundaries
 

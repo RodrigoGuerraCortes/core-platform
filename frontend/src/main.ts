@@ -25,11 +25,26 @@ async function bootstrap(): Promise<void> {
   // Business verticals (CondoFlow) use the real Laravel backend via Vite proxy.
   // onUnhandledRequest: 'bypass' lets real requests pass through to Laravel.
   if (import.meta.env.DEV) {
+    // Force service worker update on code changes
+    const MSW_VERSION = '2026-05-25-gov3'
+    const storedVersion = localStorage.getItem('msw:version')
+    
+    if (storedVersion !== MSW_VERSION) {
+      console.log('[MSW] Code version changed - unregistering old service worker')
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(registrations.map(r => r.unregister()))
+      localStorage.setItem('msw:version', MSW_VERSION)
+      console.log('[MSW] Service worker cleared. Reloading...')
+      globalThis.location.reload()
+      return
+    }
+
     const { worker } = await import('./mocks/browser')
     await worker.start({
       onUnhandledRequest: 'bypass',
       serviceWorker: { options: { updateViaCache: 'none' } },
     })
+    console.log('[MSW] Worker started - intercepting Reference and Forms APIs only')
   }
   const app = createApp(App)
 
