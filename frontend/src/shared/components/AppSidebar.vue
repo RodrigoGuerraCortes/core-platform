@@ -2,7 +2,7 @@
 import { useDisplay } from 'vuetify'
 import { useRoute } from 'vue-router'
 import { useTenantStore } from '@/stores/tenant'
-import { useNavigation } from '@/shared/composables/useNavigation'
+import { useExperienceNavigation } from '@/experiences/shared/useExperienceNavigation'
 
 defineProps<{
   modelValue: boolean
@@ -15,7 +15,7 @@ const emit = defineEmits<{
 const { smAndDown } = useDisplay()
 const route = useRoute()
 const tenantStore = useTenantStore()
-const { items } = useNavigation(() => tenantStore.tenantSlug)
+const { items, branding } = useExperienceNavigation()
 
 /**
  * An item is "active" when the current route name matches its name exactly
@@ -35,17 +35,17 @@ function isActive(itemName: string): boolean {
     width="240"
     @update:model-value="emit('update:modelValue', $event)"
   >
-    <!-- Tenant identity -->
+    <!-- Experience identity -->
     <v-list-item
       class="py-4"
-      :title="tenantStore.current?.name ?? 'Loading…'"
+      :title="branding.label"
       :subtitle="tenantStore.tenantSlug ? `/${tenantStore.tenantSlug}` : ''"
-      prepend-icon="mdi-domain"
+      :prepend-icon="branding.icon ?? 'mdi-domain'"
     />
 
     <v-divider />
 
-    <!-- Module navigation -->
+    <!-- Experience navigation -->
     <v-list density="compact" nav class="mt-1">
       <v-list-item
         v-for="item in items"

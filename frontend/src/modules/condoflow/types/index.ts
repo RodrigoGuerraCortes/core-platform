@@ -8,6 +8,7 @@ export interface Building {
   metadata: Record<string, unknown> | null
   created_at: string
   updated_at: string
+  [key: string]: unknown
 }
 
 export interface Unit {
@@ -22,6 +23,7 @@ export interface Unit {
   metadata: Record<string, unknown> | null
   created_at: string
   updated_at: string
+  [key: string]: unknown
 }
 
 export interface Resident {
@@ -37,6 +39,7 @@ export interface Resident {
   metadata: Record<string, unknown> | null
   created_at: string
   updated_at: string
+  [key: string]: unknown
 }
 
 export interface MaintenanceTicket {
@@ -53,6 +56,7 @@ export interface MaintenanceTicket {
   metadata: Record<string, unknown> | null
   created_at: string
   updated_at: string
+  [key: string]: unknown
 }
 
 export interface CondoDashboard {

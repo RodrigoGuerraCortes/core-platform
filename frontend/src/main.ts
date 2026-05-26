@@ -21,12 +21,15 @@ import { useAuthStore } from './stores/auth'
  */
 async function bootstrap(): Promise<void> {
   // ── Dev-only MSW browser worker ──────────────────────────────────────────
-  // Intercepts /api/* requests with fixtures so the app works without Laravel.
-  // onUnhandledRequest: 'bypass' lets real Vite proxy requests through when
-  // a handler is not registered (e.g. file uploads to /api/files).
+  // Intercepts /api/* requests for demo modules (Reference, Forms).
+  // Business verticals (CondoFlow) use the real Laravel backend via Vite proxy.
+  // onUnhandledRequest: 'bypass' lets real requests pass through to Laravel.
   if (import.meta.env.DEV) {
     const { worker } = await import('./mocks/browser')
-    await worker.start({ onUnhandledRequest: 'bypass' })
+    await worker.start({
+      onUnhandledRequest: 'bypass',
+      serviceWorker: { options: { updateViaCache: 'none' } },
+    })
   }
   const app = createApp(App)
 

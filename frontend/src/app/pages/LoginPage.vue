@@ -8,29 +8,23 @@
  * the browser automatically via the Sanctum stateful flow.
  */
 
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { isAxiosError } from '@/shared/api/client'
-import { useAuthStore } from '@/stores/auth'
+import { useExperienceAuth } from '@/app/experiences/auth'
 
-const authStore = useAuthStore()
 const router = useRouter()
-const route = useRoute()
+const { login, isLoading } = useExperienceAuth()
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref<string | null>(null)
 
-const isLoading = computed(() => authStore.isLoading)
-
 async function handleSubmit(): Promise<void> {
   errorMessage.value = null
   try {
-    await authStore.login(email.value, password.value)
-
-    // Redirect to the originally intended route, or fall back to home.
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
-    await router.push(redirect ?? { name: 'home' })
+    const redirectPath = await login(email.value, password.value)
+    await router.push(redirectPath)
   } catch (err: unknown) {
     if (isAxiosError(err)) {
       const status = err.response?.status

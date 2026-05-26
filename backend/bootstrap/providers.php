@@ -8,5 +8,6 @@ return [
     App\Core\Tenancy\Providers\TenancyServiceProvider::class,
     App\Providers\AppServiceProvider::class,
     App\Providers\Filament\AdminPanelProvider::class,
+    App\Providers\MigrationServiceProvider::class,
     App\Providers\TelescopeServiceProvider::class,
 ];

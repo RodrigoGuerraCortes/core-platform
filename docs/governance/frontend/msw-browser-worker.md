@@ -1,5 +1,7 @@
 # MSW Browser Worker Setup
 
+> Last updated: 2026-05-25
+
 ## Overview
 
 The frontend uses [Mock Service Worker (MSW)](https://mswjs.io/) to intercept API calls in two contexts:
@@ -10,6 +12,34 @@ The frontend uses [Mock Service Worker (MSW)](https://mswjs.io/) to intercept AP
 | **Tests (Vitest)** | `src/tests/mocks/server.ts` | `setupServer` from `msw/node` |
 
 The same handler arrays (e.g. `referenceHandlers`, `formsHandlers`) are imported by **both** files — MSW automatically uses the right implementation per environment.
+
+---
+
+## ⚠️ Runtime vs Test-Only — Governance Rule
+
+> ❌ **Business verticals MUST NOT use runtime MSW after their backend exists.**
+
+Once a module has Laravel controllers, migrations, seeders, and API routes, its handlers
+MUST be removed from `src/mocks/browser.ts` and used only in Vitest.
+
+### Which modules may use runtime MSW?
+
+| Module | Runtime MSW | Reason |
+|--------|:-----------:|--------|
+| Reference (cookbook) | ✅ | Frontend-only demo/sandbox |
+| Dynamic Forms | ✅ | Transitional — forms builder is frontend-heavy |
+| **CondoFlow** | ❌ | Real backend vertical (removed 2026-05-25) |
+| **MiniHIS** (future) | ❌ | Will follow CondoFlow architecture |
+| Any future business vertical | ❌ | Must use real APIs after backend exists |
+
+### Validating real backend usage
+
+After removing runtime MSW for a module:
+
+1. DevTools Network tab shows real XHR/fetch (no "from service worker")
+2. Laravel Telescope captures the requests
+3. Responses contain seeded database data
+4. Sanctum cookies (`XSRF-TOKEN`, `laravel_session`) are sent correctly
 
 ---
 
@@ -36,7 +66,7 @@ This file must be committed. It is referenced by `msw.workerDirectory` in `packa
 
 ---
 
-## Adding Handlers for a New Module
+## Adding Handlers for a New Module (Demo/Reference Only)
 
 ### Step 1 — Create the handler file
 

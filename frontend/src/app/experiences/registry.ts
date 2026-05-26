@@ -29,6 +29,33 @@ export const condoflowExperience: ExperienceDefinition = {
     icon: 'mdi-office-building',
     color: '#1565c0',
   },
+  auth: {
+    loginRoute: '/condoflow/login',
+    authenticatedRedirect: '/t/:tenantSlug/condoflow',
+    logoutRedirect: '/condoflow/login',
+  },
+}
+
+/**
+ * Platform experience — implicit default for unresolved routes.
+ * Exposed here for auth redirect resolution when no experience matches.
+ */
+export const platformExperience: ExperienceDefinition = {
+  key: 'platform',
+  guestEntryRoute: '/login',
+  authenticatedEntryRoute: '/t/:tenantSlug/dashboard',
+  routePrefixes: [], // Platform is the default — doesn't need prefix matching
+  navigationScope: 'tenant',
+  branding: {
+    label: 'Core Platform',
+    icon: 'mdi-domain',
+    color: '#6200ea',
+  },
+  auth: {
+    loginRoute: '/login',
+    authenticatedRedirect: '/t/:tenantSlug/dashboard',
+    logoutRedirect: '/',
+  },
 }
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
