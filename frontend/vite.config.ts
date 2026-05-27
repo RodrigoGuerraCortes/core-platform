@@ -17,6 +17,16 @@ export default defineConfig({
     },
   },
 
+  define: {
+    // Expose runtime mode to the browser so main.ts and mocks/browser.ts
+    // can decide whether to start the MSW service worker.
+    //   'cookbook' → MSW intercepts Reference & Forms APIs
+    //   'vertical' → all requests go to the real Laravel backend
+    'import.meta.env.VITE_RUNTIME_MODE': JSON.stringify(
+      process.env.VITE_RUNTIME_MODE ?? 'vertical',
+    ),
+  },
+
   server: {
     // Bind to all interfaces so the port is reachable from outside the
     // container. Has no effect when running on the host directly.

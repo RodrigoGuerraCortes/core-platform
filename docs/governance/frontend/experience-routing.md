@@ -131,3 +131,8 @@ Tests cover:
 - Guest entry route generation
 - Authenticated entry route with tenant slug substitution
 - Unknown routes
+
+## Related
+
+- [Experience Isolation](./experience-isolation.md) — navigation, branding, shell ownership
+

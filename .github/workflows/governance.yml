@@ -1,0 +1,183 @@
+name: Governance Enforcement
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/governance.yml'
+  push:
+    branches: [main, develop]
+
+jobs:
+  frontend-governance:
+    name: Frontend Governance
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run type-check
+        continue-on-error: false
+
+      - name: ESLint governance rules
+        run: npm run lint
+        continue-on-error: false
+
+      - name: Unit tests
+        run: npm run test
+        continue-on-error: false
+
+      - name: Scan for forbidden patterns
+        run: |
+          echo "🔍 Scanning for governance violations..."
+          
+          # No setupWorker imports outside mocks/browser.ts
+          if grep -r "from 'msw/browser'" src/modules/ 2>/dev/null; then
+            echo "❌ FAIL: Found msw/browser imports in vertical modules"
+            echo "   Vertical modules must NOT use MSW at runtime."
+            echo "   See docs/governance/runtime-modes.md"
+            exit 1
+          fi
+          echo "✅ No MSW browser imports in vertical modules"
+          
+          # No cross-vertical imports (already enforced by ESLint, but double-check)
+          if grep -r "from '@/modules/condoflow" src/modules/dynamic-forms/ 2>/dev/null; then
+            echo "❌ FAIL: Found cross-vertical import (forms → condoflow)"
+            exit 1
+          fi
+          if grep -r "from '@/modules/reference" src/modules/condoflow/ 2>/dev/null; then
+            echo "❌ FAIL: Found cross-vertical import (condoflow → reference)"
+            exit 1
+          fi
+          echo "✅ No cross-vertical imports detected"
+          
+          # No hardcoded experience checks in router
+          if grep -E "(condoflow|his|reference)" src/router/index.ts 2>/dev/null | grep -v "import\|//\|/\*"; then
+            echo "⚠️  WARNING: Found hardcoded vertical names in router"
+            echo "   Use resolveExperience() instead"
+          fi
+          
+          echo "✅ Frontend governance checks passed"
+
+  backend-governance:
+    name: Backend Governance
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql, pgsql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run Pest tests
+        run: vendor/bin/pest --ci
+
+      - name: Scan for cross-vertical coupling
+        run: |
+          echo "🔍 Scanning backend for architecture violations..."
+          
+          # No CondoFlow importing DynamicForms
+          if grep -r "use App\\\\Core\\\\DynamicForms" app/Core/CondoFlow/ 2>/dev/null; then
+            echo "❌ FAIL: Found cross-vertical PHP import (CondoFlow → DynamicForms)"
+            echo "   Verticals must communicate via events, not direct imports."
+            exit 1
+          fi
+          
+          # No DynamicForms importing CondoFlow
+          if grep -r "use App\\\\Core\\\\CondoFlow" app/Core/DynamicForms/ 2>/dev/null; then
+            echo "❌ FAIL: Found cross-vertical PHP import (DynamicForms → CondoFlow)"
+            exit 1
+          fi
+          
+          echo "✅ No cross-vertical PHP imports detected"
+          
+          # All vertical models use TenantScope
+          echo "🔍 Checking tenant scope enforcement..."
+          if grep -L "TenantScope::class" app/Core/CondoFlow/Models/*.php 2>/dev/null | grep -v "TenantScope.php"; then
+            echo "⚠️  WARNING: Some CondoFlow models may be missing TenantScope"
+          fi
+          
+          echo "✅ Backend governance checks passed"
+
+  documentation:
+    name: Governance Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check governance docs exist
+        run: |
+          echo "📚 Validating governance documentation..."
+          
+          required_docs=(
+            "docs/governance/README.md"
+            "docs/governance/runtime-modes.md"
+            "docs/governance/ownership-matrix.md"
+            "docs/governance/data-source-governance.md"
+            "docs/architecture/vertical-lifecycle.md"
+            "docs/architecture/domain-extraction-strategy.md"
+          )
+          
+          for doc in "${required_docs[@]}"; do
+            if [ ! -f "$doc" ]; then
+              echo "❌ FAIL: Missing required governance doc: $doc"
+              exit 1
+            fi
+          done
+          
+          echo "✅ All required governance docs exist"
+
+  summary:
+    name: Governance Summary
+    runs-on: ubuntu-latest
+    needs: [frontend-governance, backend-governance, documentation]
+    if: always()
+
+    steps:
+      - name: Report status
+        run: |
+          if [ "${{ needs.frontend-governance.result }}" == "success" ] && \
+             [ "${{ needs.backend-governance.result }}" == "success" ] && \
+             [ "${{ needs.documentation.result }}" == "success" ]; then
+            echo "✅ All governance checks passed"
+            echo "   - Frontend: ESLint + patterns + tests"
+            echo "   - Backend: Pest + architecture"
+            echo "   - Documentation: Complete"
+            exit 0
+          else
+            echo "❌ Governance checks failed"
+            echo "   Frontend: ${{ needs.frontend-governance.result }}"
+            echo "   Backend: ${{ needs.backend-governance.result }}"
+            echo "   Docs: ${{ needs.documentation.result }}"
+            exit 1
+          fi

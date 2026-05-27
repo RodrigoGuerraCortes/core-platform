@@ -1,5 +1,7 @@
 # MSW Browser Worker Setup
 
+> Last updated: 2026-05-25
+
 ## Overview
 
 The frontend uses [Mock Service Worker (MSW)](https://mswjs.io/) to intercept API calls in two contexts:
@@ -13,14 +15,55 @@ The same handler arrays (e.g. `referenceHandlers`, `formsHandlers`) are imported
 
 ---
 
+## ⚠️ Runtime vs Test-Only — Governance Rule
+
+> ❌ **Business verticals MUST NOT use runtime MSW after their backend exists.**
+
+Once a module has Laravel controllers, migrations, seeders, and API routes, its handlers
+MUST be removed from `src/mocks/browser.ts` and used only in Vitest.
+
+### Which modules may use runtime MSW?
+
+| Module | Runtime MSW | Reason |
+|--------|:-----------:|--------|
+| Reference (cookbook) | ✅ | Frontend-only demo/sandbox |
+| Dynamic Forms | ✅ | Transitional — forms builder is frontend-heavy |
+| **CondoFlow** | ❌ | Real backend vertical (removed 2026-05-25) |
+| **MiniHIS** (future) | ❌ | Will follow CondoFlow architecture |
+| Any future business vertical | ❌ | Must use real APIs after backend exists |
+
+### Validating real backend usage
+
+After removing runtime MSW for a module:
+
+1. DevTools Network tab shows real XHR/fetch (no "from service worker")
+2. Laravel Telescope captures the requests
+3. Responses contain seeded database data
+4. Sanctum cookies (`XSRF-TOKEN`, `laravel_session`) are sent correctly
+
+---
+
 ## How It Works in Development
 
-1. `main.ts` detects `import.meta.env.DEV === true`
+> ⚠️ The MSW browser worker **only** starts when `VITE_RUNTIME_MODE=cookbook`.
+> The platform defaults to `vertical` — MSW never activates unless explicitly opted in.
+
+### Cookbook mode (`VITE_RUNTIME_MODE=cookbook`)
+
+1. `main.ts` detects `import.meta.env.DEV === true` AND `runtimeMode === 'cookbook'`
 2. Dynamically imports `src/mocks/browser.ts`
 3. Calls `worker.start({ onUnhandledRequest: 'bypass' })`
 4. MSW registers a Service Worker (`public/mockServiceWorker.js`)
 5. All `fetch()` calls made by `apiClient` are intercepted by the registered handlers
 6. Requests with no matching handler fall through to the Vite proxy (→ Laravel)
+
+### Vertical mode (default)
+
+1. `main.ts` detects `import.meta.env.DEV === true` AND `runtimeMode !== 'cookbook'`
+2. Checks for any existing service worker registrations (stale from previous cookbook session)
+3. If found: unregisters all, clears MSW localStorage key, reloads the page once
+4. On clean reload: no service worker exists, bootstrap proceeds directly
+5. All `/api/*` requests go through Vite proxy → Laravel with no interception
 
 ---
 
@@ -36,7 +79,7 @@ This file must be committed. It is referenced by `msw.workerDirectory` in `packa
 
 ---
 
-## Adding Handlers for a New Module
+## Adding Handlers for a New Module (Demo/Reference Only)
 
 ### Step 1 — Create the handler file
 

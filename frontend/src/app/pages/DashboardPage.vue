@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useTenantStore } from '@/stores/tenant'
-import { useNavigation } from '@/shared/composables/useNavigation'
+import { useExperienceNavigation } from '@/experiences/shared/useExperienceNavigation'
 
 const tenantStore = useTenantStore()
-const { items } = useNavigation(() => tenantStore.tenantSlug)
+const { items } = useExperienceNavigation()
 </script>
 
 <template>

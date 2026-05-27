@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useTicketsQuery } from '../composables'
 import { AppPageLayout, AppButton, AppStatusChip } from '@/shared/ui'
 import { AppDataTable } from '@/shared/table'
 import type { TableQueryParams } from '@/shared/table'
 
-const router = useRouter()
 const queryParams = ref<TableQueryParams>({ page: 1, per_page: 15 })
 const statusFilter = ref<string>('')
 const priorityFilter = ref<string>('')
@@ -50,16 +48,8 @@ function onPageChange(page: number) {
   queryParams.value = { ...queryParams.value, page }
 }
 
-function onSearch(search: string) {
-  queryParams.value = { ...queryParams.value, page: 1, search }
-}
-
 const ticketStatusColor = (s: string) => ({ open: 'info', in_progress: 'warning', resolved: 'success', closed: 'default' }[s] ?? 'default')
 const priorityColor = (s: string) => ({ high: 'error', medium: 'warning', low: 'success' }[s] ?? 'default')
-
-function viewTicket(ticket: { id: number }) {
-  router.push({ name: 'condoflow.tickets.detail', params: { id: ticket.id } })
-}
 </script>
 
 <template>
@@ -94,17 +84,14 @@ function viewTicket(ticket: { id: number }) {
     </v-row>
 
     <AppDataTable
-      :items="items"
+      :rows="items"
       :columns="columns"
       :loading="isLoading"
       :error="isError"
       :total="meta?.total ?? 0"
       :page="meta?.current_page ?? 1"
       :per-page="meta?.per_page ?? 15"
-      searchable
       @update:page="onPageChange"
-      @update:search="onSearch"
-      @row-click="viewTicket"
     >
       <template #col-status="{ item }">
         <AppStatusChip :label="item.status" :color="ticketStatusColor(item.status)" />

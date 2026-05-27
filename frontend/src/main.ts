@@ -20,13 +20,54 @@ import { useAuthStore } from './stores/auth'
  *  5. Mount — render after everything is ready.
  */
 async function bootstrap(): Promise<void> {
+  // ── Runtime mode ─────────────────────────────────────────────────────────
+  // 'cookbook'  → uses MSW/browser for Reference & Forms modules
+  // 'vertical'  → uses real Laravel backend via Vite proxy (CondoFlow, etc.)
+  const runtimeMode: string =
+    import.meta.env.VITE_RUNTIME_MODE ?? 'vertical'
+
   // ── Dev-only MSW browser worker ──────────────────────────────────────────
-  // Intercepts /api/* requests with fixtures so the app works without Laravel.
-  // onUnhandledRequest: 'bypass' lets real Vite proxy requests through when
-  // a handler is not registered (e.g. file uploads to /api/files).
+  // Intercepts /api/* requests ONLY for demo modules (Reference, Forms).
+  // Business verticals (CondoFlow) use the real Laravel backend via Vite proxy.
+  // MSW browser worker may ONLY start when VITE_RUNTIME_MODE === 'cookbook'.
   if (import.meta.env.DEV) {
-    const { worker } = await import('./mocks/browser')
-    await worker.start({ onUnhandledRequest: 'bypass' })
+    console.log(`[Runtime] Mode: "${runtimeMode}" | DEV: true`)
+
+    if (runtimeMode === 'cookbook') {
+      // Force service worker update on code changes
+      const MSW_VERSION = '2026-05-25-gov4'
+      const storedVersion = localStorage.getItem('msw:version')
+
+      if (storedVersion !== MSW_VERSION) {
+        console.log('[MSW] Code version changed - unregistering old service worker')
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(registrations.map(r => r.unregister()))
+        localStorage.setItem('msw:version', MSW_VERSION)
+        console.log('[MSW] Service worker cleared. Reloading...')
+        globalThis.location.reload()
+        return
+      }
+
+      const { worker } = await import('./mocks/browser')
+      await worker.start({
+        onUnhandledRequest: 'bypass',
+        serviceWorker: { options: { updateViaCache: 'none' } },
+      })
+      console.log('[MSW] Worker started - intercepting Reference and Forms APIs only')
+    } else {
+      // Non-cookbook runtime (vertical, e2e, etc.) — ensure no stale SW controls this page.
+      // A service worker remains active for the current page even after unregister().
+      // We MUST reload once to fully release control.
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      if (registrations.length > 0) {
+        console.warn('[Runtime] Stale MSW service worker detected — unregistering and reloading')
+        await Promise.all(registrations.map(r => r.unregister()))
+        localStorage.removeItem('msw:version')
+        globalThis.location.reload()
+        return // Stop bootstrap — reload will restart cleanly without SW
+      }
+      console.log('[Runtime] No service worker active — proceeding with real backend')
+    }
   }
   const app = createApp(App)
 

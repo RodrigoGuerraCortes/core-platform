@@ -22,10 +22,6 @@ const columns = [
 function onPageChange(page: number) {
   queryParams.value = { ...queryParams.value, page }
 }
-
-function onSearch(search: string) {
-  queryParams.value = { ...queryParams.value, page: 1, search }
-}
 </script>
 
 <template>
@@ -37,16 +33,14 @@ function onSearch(search: string) {
     </template>
 
     <AppDataTable
-      :items="items"
+      :rows="items"
       :columns="columns"
       :loading="isLoading"
       :error="isError"
       :total="meta?.total ?? 0"
       :page="meta?.current_page ?? 1"
       :per-page="meta?.per_page ?? 15"
-      searchable
       @update:page="onPageChange"
-      @update:search="onSearch"
     >
       <template #col-created_at="{ value }">
         {{ new Date(value).toLocaleDateString() }}

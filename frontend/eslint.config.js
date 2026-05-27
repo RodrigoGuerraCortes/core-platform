@@ -176,6 +176,31 @@ export default tseslint.config(
               message:
                 'Forbidden: Import only from @/shared/table (the public surface), not from internal sub-paths.',
             },
+            // ── GOVERNANCE: No cross-vertical imports ───────────────────────
+            // Verticals MUST NOT import from each other — only from @/shared/* or Core APIs.
+            {
+              group: [
+                '@/modules/condoflow',
+                '@/modules/condoflow/*',
+                '@/modules/dynamic-forms',
+                '@/modules/dynamic-forms/*',
+                '@/modules/reference',
+                '@/modules/reference/*',
+              ],
+              message:
+                'Forbidden: Cross-vertical imports violate architecture boundaries. ' +
+                'Import from @/shared/* or Core APIs only. ' +
+                'See docs/governance/ownership-matrix.md',
+            },
+            // ── GOVERNANCE: No MSW browser in vertical-runtime modules ──────
+            // Business verticals MUST use real backend APIs, not runtime mocks.
+            {
+              group: ['msw/browser'],
+              message:
+                'Forbidden: MSW browser imports not allowed in vertical modules. ' +
+                'Use msw/node for tests only. ' +
+                'See docs/governance/runtime-modes.md',
+            },
           ],
         },
       ],
@@ -184,11 +209,11 @@ export default tseslint.config(
 
   // ── Test files — relaxed rules ─────────────────────────────────────────────
   {
-    files: ['src/**/*.test.ts', 'src/tests/**/*.ts'],
+    files: ['src/**/*.test.ts', 'src/tests/**/*.ts', 'src/**/mocks/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
-      'no-restricted-imports': 'off', // test helpers may import internals
+      'no-restricted-imports': 'off', // test helpers may import internals + MSW
     },
   },
 
@@ -197,6 +222,39 @@ export default tseslint.config(
     files: ['src/shared/api/**/*.ts', 'src/modules/**/api/**/*.ts'],
     rules: {
       'no-restricted-imports': 'off', // axios is allowed here
+    },
+  },
+
+  // ── MSW browser worker setup — MSW/browser allowed ────────────────────────
+  {
+    files: ['src/mocks/browser.ts'],
+    rules: {
+      'no-restricted-imports': 'off', // MSW browser setup needs setupWorker
+    },
+  },
+
+  // ── Router — can import module routes ─────────────────────────────────────
+  {
+    files: ['src/router/index.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            // Router can import routes, but not other module internals
+            {
+              group: [
+                '@/modules/*/api/*',
+                '@/modules/*/composables/*',
+                '@/modules/*/components/*',
+                '@/modules/*/pages/*',
+              ],
+              message:
+                'Forbidden: Router should only import /routes exports from modules, not internals.',
+            },
+          ],
+        },
+      ],
     },
   },
 

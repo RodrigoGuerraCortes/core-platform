@@ -20,6 +20,20 @@ export interface ExperienceBranding {
 }
 
 /**
+ * Experience authentication flow configuration.
+ * Defines how login/logout/redirect behave for this experience.
+ * The shared auth runtime (Sanctum, session) is reused — only flow differs.
+ */
+export interface ExperienceAuth {
+  /** Path to the login page for this experience. */
+  loginRoute: string
+  /** Where to redirect after successful login (supports :tenantSlug). */
+  authenticatedRedirect: string
+  /** Where to redirect after logout. Defaults to loginRoute if omitted. */
+  logoutRedirect?: string
+}
+
+/**
  * Each vertical module registers an ExperienceDefinition.
  * The core router uses these to resolve ownership and redirect logic.
  */
@@ -30,12 +44,14 @@ export interface ExperienceDefinition {
   /**
    * Route name or path for unauthenticated entry (login page).
    * Used when a guest hits a protected route owned by this experience.
+   * @deprecated Use `auth.loginRoute` instead. Kept for backward compat.
    */
   guestEntryRoute: string
 
   /**
    * Route name or path for authenticated entry (dashboard/landing).
    * Used when an authenticated user hits a guest-only route owned by this experience.
+   * @deprecated Use `auth.authenticatedRedirect` instead. Kept for backward compat.
    */
   authenticatedEntryRoute: string
 
@@ -56,6 +72,9 @@ export interface ExperienceDefinition {
 
   /** Optional branding metadata for login pages and navigation. */
   branding?: ExperienceBranding
+
+  /** Authentication flow configuration for this experience. */
+  auth: ExperienceAuth
 }
 
 /**

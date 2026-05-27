@@ -2,34 +2,27 @@
 /**
  * CondoFlowLoginPage — Independent login for CondoFlow residents.
  *
- * Provides a simplified login flow for residents that access only the
- * CondoFlow portal (tickets, unit info) without needing the full admin shell.
- * Uses Sanctum session-based auth like the main login.
+ * Uses the experience-aware auth composable for redirect resolution.
+ * Branding and messaging are CondoFlow-specific, but auth runtime is shared.
  */
 
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { isAxiosError } from '@/shared/api/client'
-import { useAuthStore } from '@/stores/auth'
+import { useExperienceAuth } from '@/app/experiences/auth'
 
-const authStore = useAuthStore()
 const router = useRouter()
-const route = useRoute()
+const { login, isLoading, branding } = useExperienceAuth()
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref<string | null>(null)
 
-const isLoading = computed(() => authStore.isLoading)
-
 async function handleSubmit(): Promise<void> {
   errorMessage.value = null
   try {
-    await authStore.login(email.value, password.value)
-
-    // Redirect to condoflow dashboard or originally intended route
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
-    await router.push(redirect ?? { name: 'condoflow.dashboard' })
+    const redirectPath = await login(email.value, password.value)
+    await router.push(redirectPath)
   } catch (err: unknown) {
     if (isAxiosError(err)) {
       const status = err.response?.status
@@ -55,8 +48,8 @@ async function handleSubmit(): Promise<void> {
       <v-container class="d-flex justify-center">
         <v-card elevation="8" class="pa-4" max-width="420" width="100%">
           <v-card-title class="text-h5 pt-6 px-6 text-center">
-            <v-icon size="48" color="primary" class="mb-2">mdi-office-building</v-icon>
-            <div>CondoFlow</div>
+            <v-icon size="48" color="primary" class="mb-2">{{ branding?.icon ?? 'mdi-office-building' }}</v-icon>
+            <div>{{ branding?.label ?? 'CondoFlow' }}</div>
           </v-card-title>
           <v-card-subtitle class="px-6 pb-2 text-center">
             Portal de residentes — Inicie sesión para continuar
