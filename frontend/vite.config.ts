@@ -17,15 +17,9 @@ export default defineConfig({
     },
   },
 
-  define: {
-    // Expose runtime mode to the browser so main.ts and mocks/browser.ts
-    // can decide whether to start the MSW service worker.
-    //   'cookbook' → MSW intercepts Reference & Forms APIs
-    //   'vertical' → all requests go to the real Laravel backend
-    'import.meta.env.VITE_RUNTIME_MODE': JSON.stringify(
-      process.env.VITE_RUNTIME_MODE ?? 'vertical',
-    ),
-  },
+  // NOTE: VITE_RUNTIME_MODE is loaded automatically from .env by Vite
+  // and exposed as import.meta.env.VITE_RUNTIME_MODE in client code.
+  // No manual `define` block needed for VITE_* variables.
 
   server: {
     // Bind to all interfaces so the port is reachable from outside the
