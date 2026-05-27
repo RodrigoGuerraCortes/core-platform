@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     unzip \
     git \
-    && docker-php-ext-install pdo pdo_pgsql zip intl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && docker-php-ext-install intl pdo pdo_pgsql zip
 
 # /tmp is used by PHP's tempnam() as a last resort. Ensure it is
 # world-writable with sticky bit so every process can create temp

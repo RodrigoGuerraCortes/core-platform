@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core\{{ Module }}\Providers;
+
+use App\Core\Shared\Providers\CoreModuleServiceProvider;
+
+/**
+ * Service provider for the {{ Module }} module.
+ *
+ * Registers routes and policies. No other wiring belongs here.
+ * Add listeners/observers via boot() override — always call parent::boot().
+ *
+ * @see docs/features/platform-engineering/service-provider-conventions.md
+ */
+final class {{ Module }}ServiceProvider extends CoreModuleServiceProvider
+{
+    protected array $policies = [
+        // {{ Model }}::class => {{ Model }}Policy::class,
+    ];
+
+    protected function routesPath(): ?string
+    {
+        return __DIR__ . '/../Routes/api.php';
+    }
+}

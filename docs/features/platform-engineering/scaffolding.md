@@ -1,0 +1,245 @@
+# Scaffolding — Platform Engineering
+
+**Block:** 6.2 — Minimal Scaffolding
+**Status:** Active
+**Date:** 2026-05-21
+
+---
+
+## Philosophy
+
+The Core Platform scaffolding system has one goal: **eliminate repetitive correct code, not introduce magic**.
+
+Every generated file is:
+- **Readable** — an engineer can understand it without knowing the generator
+- **Explicit** — conventions are visible in the generated code, not hidden in the generator
+- **Deletable** — delete a generated file and replace it by hand; nothing breaks
+- **Idiomatic Laravel** — no framework abstractions beyond standard Laravel primitives
+
+This is **not** a meta-framework. Generators do not enforce runtime behavior. Conventions are enforced by architecture tests, not generator guards.
+
+---
+
+## Stub Philosophy
+
+Stubs live in `backend/stubs/core-platform/`.
+
+```
+stubs/core-platform/
+├── model/
+│   ├── Model.stub        # Eloquent model with BelongsToTenant + SoftDeletes
+│   └── Factory.stub      # Factory with forTenant() helper
+├── policy/
+│   └── Policy.stub       # Policy with role matrix skeleton
+├── migration/
+│   └── create_table.stub # Migration with tenant_id FK + index + softDeletes
+├── provider/
+│   └── ModuleServiceProvider.stub
+├── routes/
+│   └── api.stub          # TenantRouteRegistrar::group() skeleton
+├── tests/
+│   ├── FeatureTest.stub   # Tenant isolation test skeleton
+│   └── ArchitectureTest.stub
+└── readme/
+    └── README.stub
+```
+
+### Stub token format
+
+All stubs use `{{ Token }}` placeholders. Tokens are replaced at generation time:
+
+| Token | Example value |
+|---|---|
+| `{{ Module }}` | `Projects` |
+| `{{ Model }}` | `Project` |
+| `{{ modelVar }}` | `project` |
+| `{{ resource }}` | `projects` |
+| `{{ table }}` | `projects` |
+
+Stubs are plain files. They can be edited directly to change defaults for future generation runs.
+
+---
+
+## Commands
+
+### `php artisan make:core-module`
+
+```bash
+php artisan make:core-module Projects
+php artisan make:core-module Projects --force   # overwrite existing files
+```
+
+**Generates:**
+
+```
+app/Core/Projects/
+├── Http/            (.gitkeep — ready for controllers)
+├── Models/          (.gitkeep — ready for models)
+├── Policies/        (.gitkeep — ready for policies)
+├── Providers/
+│   └── ProjectsServiceProvider.php
+├── Routes/
+│   └── api.php      (uses TenantRouteRegistrar)
+├── README.md
+tests/Feature/Projects/
+└── ProjectsArchitectureTest.php
+```
+
+**Does NOT generate:**
+- Controllers
+- Actions / Services
+- Models — use `make:tenant-model` for that
+- DTOs, repositories, or any other infrastructure
+
+**After generation:**
+1. Register the provider in `bootstrap/providers.php` after `TenancyServiceProvider`
+2. Run `make:tenant-model` to add models
+3. Add routes to `Core/Projects/Routes/api.php`
+
+---
+
+### `php artisan make:tenant-model`
+
+```bash
+php artisan make:tenant-model Project --module=Projects
+php artisan make:tenant-model Project --module=Projects --force
+```
+
+If `--module` is omitted, the command will prompt interactively (default: pluralised model name).
+
+**Generates:**
+
+```
+app/Core/Projects/Models/
+└── Project.php           (BelongsToTenant + SoftDeletes + HasFactory)
+
+app/Core/Projects/Policies/
+└── ProjectPolicy.php     (role matrix skeleton)
+
+database/factories/
+└── ProjectFactory.php    (forTenant() helper state)
+
+database/migrations/
+└── {timestamp}_create_projects_table.php
+
+tests/Feature/Projects/
+└── ProjectApiTest.php    (tenant isolation test skeleton)
+```
+
+**Does NOT generate:**
+- Repositories
+- Services, Actions, DTOs
+- Controllers
+- Route registrations
+
+**After generation:**
+1. Register the policy in `ProjectsServiceProvider::$policies`
+2. Review and extend the migration columns
+3. Run `php artisan migrate`
+4. Add routes to `Core/Projects/Routes/api.php`
+
+---
+
+## Generated Conventions
+
+Every generated artifact enforces these invariants:
+
+### Models
+- `BelongsToTenant` trait — automatic TenantScope + tenant_id auto-fill
+- `SoftDeletes` trait — no physical deletion
+- `HasFactory` — factory linked via `newFactory()`
+
+### Policies
+- Constructor-injected `TenantContextContract` and `MembershipResolver`
+- Role matrix: owner/admin → full CRUD; member → read-only
+- No `is_platform_admin` bypass (guardrail G-A01)
+
+### Migrations
+- `tenant_id` foreign key referencing `tenants`, `cascadeOnDelete`
+- `tenant_id` index (load-bearing — TenantScope always filters by it)
+- `softDeletes()`
+
+### Routes
+- Always uses `TenantRouteRegistrar::group()` (guardrail G-R02)
+- Never references `TenantRouteMiddleware::STACK` directly
+
+### Providers
+- Extends `CoreModuleServiceProvider`
+- Declares `$policies` and `routesPath()` only — no custom wiring
+
+### Tests
+- Tenant isolation test skeleton (A cannot access B) generated by default
+- Architecture test that checks provider registration and route file
+
+---
+
+## Architecture Test Helpers
+
+`Tests\Architecture\TenantArchitectureAssertions` provides reusable assertions:
+
+```php
+use Tests\Architecture\TenantArchitectureAssertions;
+
+// Structural assertions (in unit/architecture tests)
+TenantArchitectureAssertions::assertUsesBelongsToTenant(Project::class);
+TenantArchitectureAssertions::assertUsesSoftDeletes(Project::class);
+TenantArchitectureAssertions::assertUsesTenantRegistrar('Projects');
+TenantArchitectureAssertions::assertProviderRegistered(ProjectsServiceProvider::class);
+TenantArchitectureAssertions::assertNoPlatformAdminBypass(ProjectPolicy::class);
+
+// Runtime assertions (in feature tests)
+TenantArchitectureAssertions::assertTenantIsolation(
+    test: $this,
+    actingUser: $userA,
+    tenantA: $tenantA,
+    resourceUrl: "/projects/{$projectB->id}",
+);
+
+TenantArchitectureAssertions::assertTenantRouteProtected(
+    test: $this,
+    actingUser: $user,
+    url: '/projects',
+);
+```
+
+---
+
+## What Is Intentionally NOT Generated
+
+| Artifact | Reason |
+|---|---|
+| Controllers | Business-specific; too many valid shapes |
+| Actions / Services | Domain logic; no generic template |
+| DTOs | Shape depends on business requirements |
+| Repositories | Forbidden pattern on this platform |
+| Event/Listener pairs | Too context-specific |
+| Jobs | Async shape depends on workload |
+| RBAC/roles config | Authorization is a separate module |
+
+---
+
+## Future Expansion Boundaries
+
+The scaffolding system may eventually grow to include:
+
+- `make:core-action {Name} --module={Module}` — CQRS-lite action stub
+- `make:core-event {Name} --module={Module}` — domain event + listener skeleton
+- `make:core-job {Name} --module={Module}` — tenant-aware job with `HasTenantContext`
+
+These are not yet needed and will only be added when the repetition pattern is clear and stable.
+
+**Never add:**
+- Workflow generators
+- AI-assisted code generation
+- Reflection-heavy auto-discovery
+- Runtime code generation
+- Plugin engine patterns
+
+---
+
+## References
+
+- [ADR-011 — Tenant-Safe Route Model Binding](../../adr/ADR-011-tenant-route-model-binding.md)
+- [Service Provider Conventions](service-provider-conventions.md)
+- [Route Conventions](route-conventions.md)
+- [Architecture Guardrails](architecture-guardrails.md)
